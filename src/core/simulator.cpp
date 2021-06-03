@@ -2,14 +2,14 @@
 // Created by chungphb on 25/5/21.
 //
 
-#include <supg/core/simulator.h>
-#include <supg/util/helper.h>
+#include <chirpstack_simulator/core/simulator.h>
+#include <chirpstack_simulator/util/helper.h>
 #include <toml/toml.h>
 #include <spdlog/spdlog.h>
 #include <unistd.h>
 #include <iostream>
 
-namespace supg {
+namespace chirpstack_simulator {
 
 void simulator::init() {
     // Create socket file descriptor
@@ -19,7 +19,7 @@ void simulator::init() {
     }
 
     // Parse config
-    std::ifstream config_file("supg.toml");
+    std::ifstream config_file("chirpstack_simulator.toml");
     toml::ParseResult res = toml::parse(config_file);
     if (!res.valid()) {
         throw std::runtime_error("Invalid config file");
@@ -27,21 +27,24 @@ void simulator::init() {
     const toml::Value& config = res.value;
 
     // Initialize network server
-    network_server ns{NS_DEFAULT_HOST, NS_DEFAULT_PORT};
-    const toml::Value* val = config.find("network_server.host");
+    const toml::Value* val = config.find("server.network_server");
     if (val && val->is<std::string>()) {
-        ns._host = val->as<std::string>();
-    }
-    val = config.find("network_server.port");
-    if (val && val->is<int>()) {
-        ns._port = val->as<int>();
+        _config._network_server._host = get_host(val->as<std::string>());
+        _config._network_server._port = get_port(val->as<std::string>());
     }
     _server_addr.sin_family = AF_INET;
-    _server_addr.sin_port = htons(ns._port);
-    if (strcmp(ns._host.c_str(), NS_DEFAULT_HOST) == 0) {
+    _server_addr.sin_port = htons(_config._network_server._port);
+    if (strcmp(_config._network_server._host.c_str(), DEFAULT_NS_HOST) == 0) {
         _server_addr.sin_addr.s_addr = INADDR_ANY;
     } else {
-        inet_aton(ns._host.c_str(), &_server_addr.sin_addr);
+        inet_aton(_config._network_server._host.c_str(), &_server_addr.sin_addr);
+    }
+
+    // Initialize application server
+    val = config.find("server.application_server");
+    if (val && val->is<std::string>()) {
+        _config._application_server._host = get_host(val->as<std::string>());
+        _config._application_server._port = get_port(val->as<std::string>());
     }
 
     // Initialize log level
@@ -66,14 +69,22 @@ void simulator::init() {
         }
     }
 
-    // Initialize NwkSKey and AppSKey
-    val = config.find("simulator.network_session_key");
+    // Initialize JWT token and service-profile ID
+    val = config.find("simulator.jwt_token");
     if (val && val->is<std::string>()) {
-        _config._network_session_key = val->as<std::string>();
+        _config._jwt_token = val->as<std::string>();
+        // TODO: Validation
+        if (_config._jwt_token.empty()) {
+            throw std::invalid_argument("Invalid JWT token");
+        }
     }
-    val = config.find("simulator.application_session_key");
+    val = config.find("simulator.service_profile_id");
     if (val && val->is<std::string>()) {
-        _config._application_session_key = val->as<std::string>();
+        _config._service_profile_id = val->as<std::string>();
+        // TODO: Validation
+        if (_config._service_profile_id.empty()) {
+            throw std::invalid_argument("Invalid service-profile ID");
+        }
     }
 
     // Initialize device configs
@@ -129,9 +140,10 @@ void simulator::init() {
     }
 
     // Log config
-    spdlog::debug("[Config] {:25}: {}:{}", "Network server", ns._host, ns._port);
-    spdlog::debug("[Config] {:25}: {}", "Network session key", _config._network_session_key);
-    spdlog::debug("[Config] {:25}: {}", "Application session key", _config._application_session_key);
+    spdlog::debug("[Config] {:25}: {}", "Network server", to_string(_config._network_server));
+    spdlog::debug("[Config] {:25}: {}", "Application server", to_string(_config._application_server));
+    spdlog::debug("[Config] {:25}: {}", "JWT token", _config._jwt_token);
+    spdlog::debug("[Config] {:25}: {}", "Service-profile ID", _config._service_profile_id);
     spdlog::debug("[Config] {:25}: {}", "Device count", _config._dev_count);
     spdlog::debug("[Config] {:25}: {}", "Gateway count", _config._gw_max_count);
 }

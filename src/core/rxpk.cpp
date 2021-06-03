@@ -2,10 +2,10 @@
 // Created by chungphb on 25/5/21.
 //
 
-#include <supg/core/rxpk.h>
+#include <chirpstack_simulator/core/rxpk.h>
 #include <sstream>
 
-namespace supg {
+namespace chirpstack_simulator {
 
 byte_array rxpk::as_byte_array() const {
     std::stringstream ss;

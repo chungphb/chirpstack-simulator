@@ -4,11 +4,14 @@
 
 #pragma once
 
-#include <supg/core/device.h>
-#include <supg/core/gateway.h>
-#include <supg/util/config.h>
+#include <chirpstack_simulator/core/device.h>
+#include <chirpstack_simulator/core/gateway.h>
+#include <chirpstack_simulator/util/config.h>
+#include <chirpstack_client/chirpstack_client.h>
 
-namespace supg {
+using namespace chirpstack_cpp_client;
+
+namespace chirpstack_simulator {
 
 struct simulator {
 public:

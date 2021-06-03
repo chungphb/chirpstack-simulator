@@ -4,11 +4,11 @@
 
 #pragma once
 
-#include <supg/util/data_types.h>
+#include <chirpstack_simulator/util/data_types.h>
 #include <string>
 #include <vector>
 
-namespace supg {
+namespace chirpstack_simulator {
 
 struct device;
 struct gateway;

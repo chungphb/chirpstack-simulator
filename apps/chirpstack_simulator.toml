@@ -1,13 +1,13 @@
 [general]
 log_level = 4
 
-[network_server]
-host = "localhost"
-port = 1700
+[server]
+network_server = "localhost:1700"
+application_server = "localhost:8080"
 
 [simulator]
-network_session_key = "00000000000000000000000000000000"
-application_session_key = "00000000000000000000000000000000"
+jwt_token = ""
+service_profile_id = ""
 
 [simulator.device]
 count = 1000

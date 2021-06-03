@@ -4,10 +4,10 @@
 
 #pragma once
 
-#include <supg/core/payload.h>
+#include <chirpstack_simulator/core/payload.h>
 #include <string>
 
-namespace supg {
+namespace chirpstack_simulator {
 
 struct rxpk {
 public:

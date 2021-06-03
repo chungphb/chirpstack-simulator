@@ -2,10 +2,10 @@
 // Created by chungphb on 21/5/21.
 //
 
-#include <supg/core/simulator.h>
+#include <chirpstack_simulator/core/simulator.h>
 
 int main() {
-    using namespace supg;
+    using namespace chirpstack_simulator;
     simulator sim;
     sim.init();
     sim.start();

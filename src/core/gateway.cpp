@@ -2,19 +2,19 @@
 // Created by chungphb on 25/5/21.
 //
 
-#include <supg/core/gateway.h>
-#include <supg/util/helper.h>
+#include <chirpstack_simulator/core/gateway.h>
+#include <chirpstack_simulator/util/helper.h>
 #include <spdlog/spdlog.h>
 #include <algorithm>
 
-namespace supg {
+namespace chirpstack_simulator {
 
 gateway::gateway(std::vector<byte> mac, const config& config) : _mac{std::move(mac)}, _config{config} {}
 
 void gateway::push_data(int socket_fd, const sockaddr_in& server_addr, payload&& payload) const {
     auto pk_id = payload._f_cnt;
-    auto&& gw_mac = hex_string(_mac);
-    auto&& dev_addr = hex_string(payload._dev_addr);
+    auto&& gw_mac = to_hex_string(_mac);
+    auto&& dev_addr = to_hex_string(payload._dev_addr);
 
     // Create Semtech UDP packet
     auto&& data = generate_data(payload.as_byte_array());

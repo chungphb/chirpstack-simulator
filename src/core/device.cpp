@@ -2,9 +2,9 @@
 // Created by chungphb on 25/5/21.
 //
 
-#include <supg/core/device.h>
+#include <chirpstack_simulator/core/device.h>
 
-namespace supg {
+namespace chirpstack_simulator {
 
 device::device(std::vector<byte> addr, const config& config) : _addr{std::move(addr)}, _config{config} {}
 

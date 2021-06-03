@@ -4,14 +4,14 @@
 
 #pragma once
 
-#include <supg/core/rxpk.h>
-#include <supg/core/payload.h>
-#include <supg/util/config.h>
+#include <chirpstack_simulator/core/rxpk.h>
+#include <chirpstack_simulator/core/payload.h>
+#include <chirpstack_simulator/util/config.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-namespace supg {
+namespace chirpstack_simulator {
 
 char get_random_byte();
 

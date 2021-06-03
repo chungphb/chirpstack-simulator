@@ -1,24 +1,25 @@
 cmake_minimum_required(VERSION 3.12)
-project(supg)
+project(chirpstack_simulator)
 
 set(CMAKE_CXX_STANDARD 14)
 
 include_directories(modules/tinytoml/include)
 include_directories(modules/date/include)
 include_directories(modules/spdlog/include)
+include_directories(modules/chirpstack-cpp-client/include)
 include_directories(include)
 
-set(SUPG_HEADERS
-    include/supg/core/simulator.h
-    include/supg/core/device.h
-    include/supg/core/gateway.h
-    include/supg/core/rxpk.h
-    include/supg/core/payload.h
-    include/supg/util/helper.h
-    include/supg/util/config.h
-    include/supg/util/helper.h
+set(CHIRPSTACK_SIMULATOR_HEADERS
+    include/chirpstack_simulator/core/simulator.h
+    include/chirpstack_simulator/core/device.h
+    include/chirpstack_simulator/core/gateway.h
+    include/chirpstack_simulator/core/rxpk.h
+    include/chirpstack_simulator/core/payload.h
+    include/chirpstack_simulator/util/helper.h
+    include/chirpstack_simulator/util/config.h
+    include/chirpstack_simulator/util/helper.h
 )
-set(SUPG_SOURCES
+set(CHIRPSTACK_SIMULATOR_SOURCES
     src/core/simulator.cpp
     src/core/device.cpp
     src/core/gateway.cpp
@@ -26,10 +27,10 @@ set(SUPG_SOURCES
     src/core/payload.cpp
     src/util/helper.cpp
 )
-add_library(supg ${SUPG_HEADERS} ${SUPG_SOURCES})
-target_link_libraries(supg PUBLIC date::date)
+add_library(chirpstack_simulator ${CHIRPSTACK_SIMULATOR_HEADERS} ${CHIRPSTACK_SIMULATOR_SOURCES})
+target_link_libraries(chirpstack_simulator PUBLIC date::date chirpstack_client)
 
 add_executable(main apps/main.cpp)
-target_link_libraries(main PRIVATE supg)
+target_link_libraries(main PRIVATE chirpstack_simulator)
 
 add_subdirectory(modules)

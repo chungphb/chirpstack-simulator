@@ -8,7 +8,7 @@
 #include <cstring>
 #include <vector>
 
-namespace supg {
+namespace chirpstack_simulator {
 
 using byte = char;
 using byte_array = std::basic_string<byte>;
@@ -24,7 +24,7 @@ enum struct message_type {
     proprietary
 };
 
-struct network_server {
+struct server_address {
     std::string _host;
     uint16_t _port;
 };

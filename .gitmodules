@@ -7,3 +7,6 @@
 [submodule "modules/spdlog"]
 	path = modules/spdlog
 	url = https://github.com/gabime/spdlog
+[submodule "modules/chirpstack-cpp-client"]
+	path = modules/chirpstack-cpp-client
+	url = https://github.com/chungphb/chirpstack-cpp-client

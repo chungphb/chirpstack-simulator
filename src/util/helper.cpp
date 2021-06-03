@@ -2,15 +2,15 @@
 // Created by chungphb on 25/5/21.
 //
 
-#include <supg/util/helper.h>
-#include <supg/util/config.h>
+#include <chirpstack_simulator/util/helper.h>
+#include <chirpstack_simulator/util/config.h>
 #include <date/date.h>
 #include <random>
 #include <sstream>
 #include <iomanip>
 #include <chrono>
 
-namespace supg {
+namespace chirpstack_simulator {
 
 size_t get_random(size_t min, size_t max) {
     std::random_device rd;
@@ -29,7 +29,7 @@ std::string get_current_timestamp() {
     return date::format("%FT%TZ", date::floor<std::chrono::microseconds>(now));
 }
 
-size_t get_time() {
+size_t get_time_since_epoch() {
     auto now = std::chrono::system_clock::now();
     return now.time_since_epoch().count();
 }
@@ -79,7 +79,11 @@ std::string base64_decode(const std::string& in) {
     return out;
 }
 
-std::string hex_string(const std::vector<byte>& vec) {
+std::string to_string(const server_address& addr) {
+    return addr._host + ":" + std::to_string(addr._port);
+}
+
+std::string to_hex_string(const std::vector<byte>& vec) {
     std::stringstream ss;
     for (const auto& ele : vec) {
         ss << std::hex << std::setw(2) << std::setfill('0') << (int)ele;
@@ -87,12 +91,28 @@ std::string hex_string(const std::vector<byte>& vec) {
     return ss.str();
 }
 
-std::string hex_string(const byte* str, size_t len) {
+std::string to_hex_string(const byte* str, size_t len) {
     std::stringstream ss;
     for (size_t i = 0; i < len; ++i) {
         ss << std::hex << std::setw(2) << std::setfill('0') << str[i];
     }
     return ss.str();
+}
+
+std::string get_host(const std::string& host_name) {
+    auto colon_pos = host_name.find(':');
+    if (colon_pos == std::string::npos) {
+        throw std::invalid_argument("Invalid host name");
+    }
+    return host_name.substr(0, colon_pos);
+}
+
+uint16_t get_port(const std::string& host_name) {
+    auto colon_pos = host_name.find(':');
+    if (colon_pos == std::string::npos) {
+        throw std::invalid_argument("Invalid host name");
+    }
+    return std::stoi(host_name.substr(colon_pos + 1));
 }
 
 ssize_t timeout_recvfrom(int fd, char* buf, ssize_t buf_len, const sockaddr_in& addr, int t_sec) {

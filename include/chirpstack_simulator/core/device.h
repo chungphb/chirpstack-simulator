@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include <supg/core/gateway.h>
+#include <chirpstack_simulator/core/gateway.h>
 
-namespace supg {
+namespace chirpstack_simulator {
 
 struct device {
 public:
