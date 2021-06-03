@@ -6,12 +6,23 @@
 
 #include <chirpstack_simulator/util/data_types.h>
 #include <netinet/in.h>
+#include <random>
 
 namespace chirpstack_simulator {
 
 // Get random values
-size_t get_random(size_t min, size_t max);
-byte get_random_byte();
+template <typename T = size_t>
+T get_random_number(T min, T max) {
+    std::random_device rd;
+    std::mt19937 mt{rd()};
+    std::uniform_int_distribution<T> dist{min, max};
+    return dist(mt);
+}
+
+byte get_random_byte(byte min, byte max);
+std::string get_random_eui64();
+std::string get_random_aes128key();
+std::string get_random_uuid_v4();
 
 // Get time related values
 std::string get_current_timestamp();

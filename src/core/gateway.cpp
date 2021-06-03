@@ -20,8 +20,8 @@ void gateway::push_data(int socket_fd, const sockaddr_in& server_addr, payload&&
     auto&& data = generate_data(payload.as_byte_array());
     byte_array packet(GW_MAC_LEN + 4, 0);
     packet[0] = 0x02;
-    packet[1] = get_random_byte();
-    packet[2] = get_random_byte();
+    packet[1] = get_random_byte(0, 127);
+    packet[2] = get_random_byte(0, 127);
     packet[3] = 0x00;
     for (size_t i = 0; i < GW_MAC_LEN; ++i) {
         packet[i + 4] = _mac[i];
@@ -45,6 +45,10 @@ void gateway::push_data(int socket_fd, const sockaddr_in& server_addr, payload&&
             spdlog::info("Gateway {}: Receive invalid ACK for packet #{} from device {}", gw_mac, pk_id, dev_addr);
         }
     }
+}
+
+std::string gateway::id() const {
+    return to_hex_string(_mac);
 }
 
 rxpk gateway::generate_data(byte_array&& payload) const {

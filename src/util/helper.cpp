@@ -5,23 +5,60 @@
 #include <chirpstack_simulator/util/helper.h>
 #include <chirpstack_simulator/util/config.h>
 #include <date/date.h>
-#include <random>
 #include <sstream>
 #include <iomanip>
 #include <chrono>
+#include <iostream>
 
 namespace chirpstack_simulator {
 
-size_t get_random(size_t min, size_t max) {
-    std::random_device rd;
-    std::mt19937 mt{rd()};
-    std::uniform_int_distribution<size_t> dist{min, max};
-    return dist(mt);
+byte get_random_byte(byte min, byte max) {
+    auto res = get_random_number<int>(min, max);
+    return static_cast<byte>(res);
 }
 
-byte get_random_byte() {
-    size_t res = get_random(0, 127);
-    return static_cast<byte>(res);
+std::string get_random_eui64() {
+    std::stringstream ss;
+    ss << std::hex;
+    for (int i = 0; i < 16; ++i) {
+        ss << get_random_number<int>(0, 15);
+    }
+    return ss.str();
+}
+
+std::string get_random_aes128key() {
+    std::stringstream ss;
+    ss << std::hex;
+    for (int i = 0; i < 32; ++i) {
+        ss << get_random_number<int>(0, 15);
+    }
+    return ss.str();
+}
+
+std::string get_random_uuid_v4() {
+    std::stringstream ss;
+    ss << std::hex;
+    for (int i = 0; i < 8; ++i) {
+        ss << get_random_number<int>(0, 15);
+    }
+    ss << "-";
+    for (int i = 0; i < 4; ++i) {
+        ss << get_random_number<int>(0, 15);
+    }
+    ss << "-4";
+    for (int i = 0; i < 3; ++i) {
+        ss << get_random_number<int>(0, 15);
+    }
+    ss << "-";
+    ss << get_random_number<int>(8, 11);
+    for (int i = 0; i < 3; ++i) {
+        ss << get_random_number<int>(0, 15);
+    }
+    ss << "-";
+    for (int i = 0; i < 12; ++i) {
+        ss << get_random_number<int>(0, 15);
+    }
+    return ss.str();
 }
 
 std::string get_current_timestamp() {
