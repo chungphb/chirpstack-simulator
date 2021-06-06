@@ -6,8 +6,9 @@
 
 #include <chirpstack_simulator/core/device.h>
 #include <chirpstack_simulator/core/gateway.h>
-#include <chirpstack_simulator/util/config.h>
+#include <chirpstack_simulator/core/config.h>
 #include <chirpstack_client/chirpstack_client.h>
+#include <spdlog/spdlog.h>
 
 namespace chirpstack_simulator {
 
@@ -16,7 +17,7 @@ using namespace chirpstack_cpp_client;
 struct simulator {
 public:
     void init();
-    void start();
+    void run();
     void stop();
 
 private:
@@ -37,11 +38,9 @@ private:
     void setup_device_keys(client_info& info);
 
 private:
-    int _socket_fd;
-    sockaddr_in _server_addr;
     config _config;
-    std::vector<device> _dev_list;
-    std::vector<gateway> _gw_list;
+    std::vector<std::shared_ptr<device>> _dev_list;
+    std::vector<std::shared_ptr<gateway>> _gw_list;
     std::unique_ptr<chirpstack_client> _client;
 };
 

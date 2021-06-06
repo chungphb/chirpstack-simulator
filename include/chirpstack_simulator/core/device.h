@@ -5,24 +5,53 @@
 #pragma once
 
 #include <chirpstack_simulator/core/gateway.h>
+#include <chirpstack_simulator/core/lora/phy_payload.h>
+#include <gw/gw.grpc.pb.h>
 
 namespace chirpstack_simulator {
 
+struct simulator;
+
+enum struct device_state : int {
+    otaa = 0,
+    activated = 1
+};
+
 struct device {
 public:
-    device(std::vector<byte> addr, const config& config);
-    void send_payload(const gateway& gateway, int socket_fd, const sockaddr_in& server_addr);
-    std::string addr() const;
-    std::string eui() const;
+    void run();
+    void stop();
+    friend struct simulator;
 
 private:
-    payload generate_payload(message_type m_type);
+    void uplink_loop();
+    void send_join_request();
+    void send_data();
+    void send_uplink(lora::phy_payload phy_payload);
+    void downlink_loop();
+    lora::dev_nonce get_dev_nonce();
 
 private:
-    std::vector<byte> _addr;
-    std::vector<byte> _eui;
-    int _frame_cnt = 0;
-    const config& _config;
+    bool _stopped = false;
+    lora::eui64 _dev_eui;
+    lora::eui64 _join_eui;
+    lora::aes128key _app_key;
+    size_t _uplink_interval = 60;
+    uint32_t _uplink_cnt = 0;
+    bool _confirmed = false;
+    std::vector<byte> _payload;
+    uint8_t _f_port;
+    lora::dev_addr _dev_addr;
+    lora::dev_nonce _dev_nonce;
+    uint32_t _f_cnt_up = 0;
+    lora::aes128key _app_s_key;
+    lora::aes128key _nwk_s_key;
+    device_state _dev_state = device_state::otaa;
+    std::vector<gw::DownlinkFrame> _downlink_frames;
+    std::vector<std::shared_ptr<gateway>> _gateways;
+    bool _rand_dev_nonce = false;
+    gw::UplinkTXInfo _uplink_tx_info;
+    size_t _otaa_delay = 60;
 };
 
 }

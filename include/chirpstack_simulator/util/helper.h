@@ -19,7 +19,7 @@ T get_random_number(T min, T max) {
     return dist(mt);
 }
 
-byte get_random_byte(byte min, byte max);
+byte get_random_byte(byte min = BYTE_MIN, byte max = BYTE_MAX);
 std::string get_random_eui64();
 std::string get_random_aes128key();
 std::string get_random_uuid_v4();
@@ -34,7 +34,6 @@ std::string base64_decode(const std::string& in);
 
 // Convert to string
 std::string to_string(const server_address& addr);
-std::string to_hex_string(const std::vector<byte>& vec);
 std::string to_hex_string(const byte* str, size_t len);
 
 // Extract information

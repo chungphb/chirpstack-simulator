@@ -3,9 +3,7 @@
 //
 
 #include <chirpstack_simulator/util/helper.h>
-#include <chirpstack_simulator/util/config.h>
 #include <date/date.h>
-#include <sstream>
 #include <iomanip>
 #include <chrono>
 #include <iostream>
@@ -68,7 +66,7 @@ std::string get_current_timestamp() {
 
 size_t get_time_since_epoch() {
     auto now = std::chrono::system_clock::now();
-    return now.time_since_epoch().count();
+    return std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()).count();
 }
 
 const char* base64_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -120,18 +118,10 @@ std::string to_string(const server_address& addr) {
     return addr._host + ":" + std::to_string(addr._port);
 }
 
-std::string to_hex_string(const std::vector<byte>& vec) {
-    std::stringstream ss;
-    for (const auto& ele : vec) {
-        ss << std::hex << std::setw(2) << std::setfill('0') << (int)ele;
-    }
-    return ss.str();
-}
-
 std::string to_hex_string(const byte* str, size_t len) {
     std::stringstream ss;
     for (size_t i = 0; i < len; ++i) {
-        ss << std::hex << std::setw(2) << std::setfill('0') << str[i];
+        ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<unsigned>(str[i] - BYTE_MIN);
     }
     return ss.str();
 }

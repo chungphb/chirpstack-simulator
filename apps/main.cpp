@@ -8,7 +8,7 @@ int main() {
     using namespace chirpstack_simulator;
     simulator sim;
     sim.init();
-    sim.start();
+    sim.run();
     sim.stop();
     return 0;
 }

@@ -8,12 +8,15 @@ application_server = "localhost:8080"
 [simulator]
 jwt_token = ""
 service_profile_id = ""
+activation_time = 60
 
 [simulator.device]
 count = 1000
+uplink_interval = 60
 f_port = 10
 payload = "test_packet_1234"
 frequency = 868100000
+bandwidth = 500
 spreading_factor = 12
 
 [simulator.gateway]
