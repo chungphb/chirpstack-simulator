@@ -5,6 +5,7 @@
 #pragma once
 
 #include <chirpstack_simulator/util/data_types.h>
+#include <memory>
 
 namespace chirpstack_simulator {
 namespace lora {
@@ -34,7 +35,7 @@ struct fhdr {
     dev_addr _dev_addr;
     f_ctrl _f_ctrl;
     uint32_t _f_cnt;
-    std::vector<payload> _f_opts;
+    std::vector<std::unique_ptr<payload>> _f_opts;
 };
 
 }

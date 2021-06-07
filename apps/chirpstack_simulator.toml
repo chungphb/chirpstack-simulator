@@ -16,7 +16,7 @@ uplink_interval = 60
 f_port = 10
 payload = "test_packet_1234"
 frequency = 868100000
-bandwidth = 500
+bandwidth = 125
 spreading_factor = 12
 
 [simulator.gateway]

@@ -70,7 +70,7 @@ std::vector<byte> gateway::generate_push_data_packet(const gw::UplinkFrame& payl
     data.add("chan", payload.rx_info().channel());
     data.add("rfch", payload.rx_info().rf_chain());
     data.add("freq", payload.tx_info().frequency() / 1000000.);
-    data.add("stat", payload.rx_info().crc_status());
+    data.add("stat", payload.rx_info().crc_status() == gw::CRC_OK ? 1 : 0);
     if (payload.tx_info().modulation() == common::LORA) {
         data.add("modu", "LORA");
         if (payload.tx_info().has_lora_modulation_info()) {

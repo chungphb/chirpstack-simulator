@@ -12,10 +12,10 @@ namespace chirpstack_simulator {
 namespace lora {
 
 enum struct join_type : uint8_t {
-    join_request_type = 0,
-    rejoin_request_type_0 = 1,
-    rejoin_request_type_1 = 2,
-    rejoin_request_type_2 = 3
+    join_request_type = 0xff,
+    rejoin_request_type_0 = 0x00,
+    rejoin_request_type_1 = 0x01,
+    rejoin_request_type_2 = 0x02
 };
 
 struct eui64 {
@@ -82,7 +82,12 @@ struct cf_list_channel_payload : public payload {
     std::array<uint32_t, 5> _channels;
 };
 
-using ch_mask = std::array<bool, 16>;
+struct ch_mask {
+    std::vector<byte> marshal_binary();
+    void unmarshal_binary(const std::vector<byte>& data);
+    operator bool() const;
+    std::array<bool, 16> _value;
+};
 
 struct cf_list_channel_mask_payload : public payload {
     std::vector<byte> marshal_binary() override;
@@ -96,6 +101,7 @@ struct join_accept_payload : public payload {
     join_nonce _join_nonce;
     net_id _home_net_id;
     dev_addr _dev_addr;
+    dl_settings _dl_settings;
     uint8_t _rx_delay;
     std::unique_ptr<cf_list> _cf_list;
 };

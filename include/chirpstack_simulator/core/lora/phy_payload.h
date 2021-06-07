@@ -37,6 +37,8 @@ struct aes128key {
 };
 
 struct mic {
+    bool operator==(const mic& rhs) const;
+    bool operator!=(const mic& rhs) const;
     std::array<byte, 4> _value;
 };
 
@@ -91,26 +93,30 @@ struct phy_payload {
         std::vector<byte> _data;
     };
 
-    // For uplink data payload
+    // For uplink data frame
     void set_uplink_data_mic(const uplink_data_info& info);
     bool validate_uplink_data_mic(const uplink_data_info& info);
     bool validate_uplink_data_micf(aes128key f_nwk_s_int_key);
     mic calculate_uplink_data_mic(const uplink_data_info& info);
 
-    // For downlink data payload
+    // For downlink data frame
     void set_downlink_data_mic(const downlink_data_info& info);
     bool validate_downlink_data_mic(const downlink_data_info& info);
     mic calculate_downlink_data_mic(const downlink_data_info& info);
 
-    // For uplink join payload
+    // For uplink join request
     void set_uplink_join_mic(const uplink_join_info& info);
     bool validate_uplink_join_mic(const uplink_join_info& info);
     mic calculate_uplink_join_mic(const uplink_join_info& info);
 
-    // For downlink join payload
+    // For downlink join request
     void set_downlink_join_mic(const downlink_join_info& info);
     bool validate_downlink_join_mic(const downlink_join_info& info);
     mic calculate_downlink_join_mic(const downlink_join_info& info);
+
+    // For join accept payload
+    void encrypt_join_accept_payload(aes128key key);
+    void decrypt_join_accept_payload(aes128key key);
 
     // For FOpts MAC commands
     void encrypt_f_opts(aes128key nwk_s_enc_key);
