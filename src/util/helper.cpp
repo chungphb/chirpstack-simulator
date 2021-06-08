@@ -121,7 +121,7 @@ std::string to_string(const server_address& addr) {
 std::string to_hex_string(const byte* str, size_t len) {
     std::stringstream ss;
     for (size_t i = 0; i < len; ++i) {
-        ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<unsigned>(str[i] - BYTE_MIN);
+        ss << std::hex << std::setw(2) << std::setfill('0') << (int)static_cast<unsigned char>(str[i]);
     }
     return ss.str();
 }

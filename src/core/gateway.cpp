@@ -9,10 +9,6 @@
 
 namespace chirpstack_simulator {
 
-gateway::~gateway() {
-    stop();
-}
-
 void gateway::run() {
     if ((_socket_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
         spdlog::critical("Failed to create socket file descriptor");
@@ -20,7 +16,7 @@ void gateway::run() {
     }
 }
 
-void gateway::stop() const {
+void gateway::stop() {
     close(_socket_fd);
 }
 
@@ -32,16 +28,16 @@ void gateway::send_uplink_frame(gw::UplinkFrame frame) {
 
     // Send packet
     sendto(_socket_fd, packet.data(), packet.size(), MSG_CONFIRM, (const sockaddr*)&_server, sizeof(_server));
-    spdlog::info("Gateway {}: Send packet", _gateway_id.string());
+    spdlog::debug("Gateway {}: Send packet", _gateway_id.string());
 
     // Receive ACK
     byte ack[1024];
     auto ack_len = timeout_recvfrom(_socket_fd, ack, 1024, _server, 12);
     if (ack_len < 0) {
-        spdlog::info("Gateway {}: Not receive ACK", _gateway_id.string());
+        spdlog::debug("Gateway {}: Not receive ACK", _gateway_id.string());
     } else {
         ack[ack_len] = '\0';
-        spdlog::info("Gateway {}: Receive {} ACK", _gateway_id.string(), (ack_len == 4 ? "valid" : "invalid"));
+        spdlog::debug("Gateway {}: Receive {} ACK", _gateway_id.string(), (ack_len == 4 ? "valid" : "invalid"));
     }
 }
 

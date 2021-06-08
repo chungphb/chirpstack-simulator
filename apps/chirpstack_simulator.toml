@@ -8,6 +8,7 @@ application_server = "localhost:8080"
 [simulator]
 jwt_token = ""
 service_profile_id = ""
+duration = 120
 activation_time = 60
 
 [simulator.device]

@@ -8,7 +8,6 @@
 #include <chirpstack_simulator/util/helper.h>
 #include <spdlog/spdlog.h>
 #include <thread>
-#include <future>
 #include <chrono>
 
 namespace chirpstack_simulator {
@@ -16,12 +15,14 @@ namespace chirpstack_simulator {
 using namespace std::chrono_literals;
 
 void device::run() {
-    auto f1 = std::async(std::launch::async, &device::uplink_loop, this);
-    auto f2 = std::async(std::launch::async, &device::downlink_loop, this);
+    _uplink_loop = std::async(std::launch::async, &device::uplink_loop, this);
+    _downlink_loop = std::async(std::launch::async, &device::downlink_loop, this);
 }
 
 void device::stop() {
     _stopped = true;
+    _uplink_loop.get();
+    _downlink_loop.get();
 }
 
 void device::uplink_loop() {
@@ -121,7 +122,7 @@ void device::send_uplink(lora::phy_payload phy_payload) {
 
 void device::downlink_loop() {
     while (!_stopped) {
-        spdlog::info("Receive downlink");
+        spdlog::debug("Receive downlink");
         std::this_thread::sleep_for(6s);
     }
 }

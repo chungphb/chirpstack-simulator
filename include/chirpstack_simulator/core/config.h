@@ -26,6 +26,7 @@ private:
     server_address _application_server{default_as_host, default_as_port};
     std::string _jwt_token;
     std::string _service_profile_id;
+    int _duration = 120;
     int _activation_time = 60;
     int _dev_count = 1000;
     int _uplink_interval = 60;

@@ -17,9 +17,8 @@ struct simulator;
 
 struct gateway {
 public:
-    ~gateway();
     void run();
-    void stop() const;
+    void stop();
     void send_uplink_frame(gw::UplinkFrame payload);
     friend struct simulator;
 

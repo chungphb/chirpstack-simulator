@@ -21,6 +21,24 @@ public:
     void stop();
 
 private:
+    void setup_client();
+    void setup_service_profile();
+    void setup_gateways();
+    void setup_device_profile();
+    void setup_application();
+    void setup_devices();
+    void setup_device_keys();
+    void tear_down_client();
+    void tear_down_devices();
+    void tear_down_application();
+    void tear_down_device_profile();
+    void tear_down_gateways();
+
+private:
+    config _config;
+    std::vector<std::shared_ptr<device>> _dev_list;
+    std::vector<std::shared_ptr<gateway>> _gw_list;
+    std::unique_ptr<chirpstack_client> _client;
     struct client_info {
         std::string _device_profile_name;
         std::string _application_name;
@@ -28,20 +46,7 @@ private:
         std::string _device_profile_id;
         int64_t _application_id;
     };
-
-    void setup_client();
-    void setup_service_profile(client_info& info);
-    void setup_gateway(client_info& info);
-    void setup_device_profile(client_info& info);
-    void setup_application(client_info& info);
-    void setup_device(client_info& info);
-    void setup_device_keys(client_info& info);
-
-private:
-    config _config;
-    std::vector<std::shared_ptr<device>> _dev_list;
-    std::vector<std::shared_ptr<gateway>> _gw_list;
-    std::unique_ptr<chirpstack_client> _client;
+    client_info _client_info;
 };
 
 }

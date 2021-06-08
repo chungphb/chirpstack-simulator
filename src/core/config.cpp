@@ -9,6 +9,8 @@
 namespace chirpstack_simulator {
 
 void config::init(const std::string& config_file) {
+    spdlog::info("[CONFIG]");
+
     // Parse config
     std::ifstream ifs(config_file);
     toml::ParseResult res = toml::parse(ifs);
@@ -70,6 +72,10 @@ void config::init(const std::string& config_file) {
             throw std::invalid_argument("Invalid service-profile ID");
         }
     }
+    val = config.find("simulator.duration");
+    if (val && val->is<int>()) {
+        _duration = val->as<int>();
+    }
     val = config.find("simulator.activation_time");
     if (val && val->is<int>()) {
         _activation_time = val->as<int>();
@@ -114,6 +120,12 @@ void config::init(const std::string& config_file) {
     if (val && val->is<int>()) {
         _gw_max_count = val->as<int>();
     }
+
+    // Log config
+    spdlog::debug("{:<25}: {:>20}", "Network server", to_string(_network_server));
+    spdlog::debug("{:<25}: {:>20}", "Application server", to_string(_application_server));
+    spdlog::debug("{:<25}: {:>20}", "Device count", _dev_count);
+    spdlog::debug("{:<25}: {:>20}", "Gateway count", _gw_max_count);
 }
 
 }

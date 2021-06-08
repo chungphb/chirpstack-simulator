@@ -7,6 +7,7 @@
 #include <chirpstack_simulator/core/gateway.h>
 #include <chirpstack_simulator/core/lora/phy_payload.h>
 #include <gw/gw.grpc.pb.h>
+#include <future>
 
 namespace chirpstack_simulator {
 
@@ -32,7 +33,6 @@ private:
     lora::dev_nonce get_dev_nonce();
 
 private:
-    bool _stopped = false;
     lora::eui64 _dev_eui;
     lora::eui64 _join_eui;
     lora::aes128key _app_key;
@@ -52,6 +52,9 @@ private:
     bool _rand_dev_nonce = false;
     gw::UplinkTXInfo _uplink_tx_info;
     size_t _otaa_delay = 60;
+    std::future<void> _uplink_loop;
+    std::future<void> _downlink_loop;
+    bool _stopped = false;
 };
 
 }

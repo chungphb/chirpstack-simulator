@@ -4,11 +4,10 @@
 
 #include <chirpstack_simulator/core/simulator.h>
 
-int main() {
+int main(int argc, char** argv) {
     using namespace chirpstack_simulator;
     simulator sim;
     sim.init();
     sim.run();
-    sim.stop();
     return 0;
 }
