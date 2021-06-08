@@ -59,7 +59,7 @@ void device::send_join_request() {
     payload._dev_eui = _dev_eui;
     payload._join_eui = _join_eui;
     payload._dev_nonce = get_dev_nonce();
-    phy_payload._mac_payload = std::make_unique<lora::join_request_payload>(std::move(payload));
+    phy_payload._mac_payload = std::make_shared<lora::join_request_payload>(std::move(payload));
 
     // Set MIC
     lora::phy_payload::uplink_join_info info{};
@@ -86,6 +86,7 @@ void device::send_data() {
     lora::data_payload data;
     data._data = _payload;
     payload._frm_payload.push_back(std::make_unique<lora::data_payload>(std::move(data)));
+    phy_payload._mac_payload = std::make_shared<lora::mac_payload>(std::move(payload));
 
     // Encrypt
     phy_payload.encrypt_frm_payload(_app_s_key);

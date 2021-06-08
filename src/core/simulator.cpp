@@ -262,7 +262,7 @@ void simulator::setup_device_keys() {
         api::CreateDeviceKeysRequest request;
         api::DeviceKeys* device_keys = request.mutable_device_keys();
         device_keys->set_dev_eui(dev->_dev_eui.string());
-        device_keys->set_nwk_key(get_random_aes128key());
+        device_keys->set_nwk_key(dev->_app_key.string());
 
         // Create device keys
         auto response = _client->create_device_keys(request);

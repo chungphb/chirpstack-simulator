@@ -7,6 +7,12 @@
 [submodule "modules/spdlog"]
 	path = modules/spdlog
 	url = https://github.com/gabime/spdlog
-[submodule "modules/chirpstack-cpp-client"]
-	path = modules/chirpstack-cpp-client
-	url = https://github.com/chungphb/chirpstack-cpp-client
+[submodule "modules/chirpstack-client"]
+	path = modules/chirpstack-client
+	url = https://github.com/chungphb/chirpstack-client
+[submodule "modules/cryptopp"]
+	path = modules/cryptopp
+	url = https://github.com/weidai11/cryptopp
+[submodule "modules/cryptopp-cmake"]
+	path = modules/cryptopp-cmake
+	url = https://github.com/noloader/cryptopp-cmake

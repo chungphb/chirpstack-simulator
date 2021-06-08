@@ -33,6 +33,7 @@ enum struct mac_version : byte {
 struct aes128key {
     std::vector<byte> marshal_binary();
     void unmarshal_binary(const std::vector<byte>& data);
+    std::basic_string<byte> string();
     std::array<byte, 16> _value;
 };
 
@@ -94,25 +95,25 @@ struct phy_payload {
     };
 
     // For uplink data frame
-    void set_uplink_data_mic(const uplink_data_info& info);
-    bool validate_uplink_data_mic(const uplink_data_info& info);
+    void set_uplink_data_mic(uplink_data_info& info);
+    bool validate_uplink_data_mic(uplink_data_info& info);
     bool validate_uplink_data_micf(aes128key f_nwk_s_int_key);
-    mic calculate_uplink_data_mic(const uplink_data_info& info);
+    mic calculate_uplink_data_mic(uplink_data_info& info);
 
     // For downlink data frame
-    void set_downlink_data_mic(const downlink_data_info& info);
-    bool validate_downlink_data_mic(const downlink_data_info& info);
-    mic calculate_downlink_data_mic(const downlink_data_info& info);
+    void set_downlink_data_mic(downlink_data_info& info);
+    bool validate_downlink_data_mic(downlink_data_info& info);
+    mic calculate_downlink_data_mic(downlink_data_info& info);
 
     // For uplink join request
-    void set_uplink_join_mic(const uplink_join_info& info);
-    bool validate_uplink_join_mic(const uplink_join_info& info);
-    mic calculate_uplink_join_mic(const uplink_join_info& info);
+    void set_uplink_join_mic(uplink_join_info& info);
+    bool validate_uplink_join_mic(uplink_join_info& info);
+    mic calculate_uplink_join_mic(uplink_join_info& info);
 
     // For downlink join request
-    void set_downlink_join_mic(const downlink_join_info& info);
-    bool validate_downlink_join_mic(const downlink_join_info& info);
-    mic calculate_downlink_join_mic(const downlink_join_info& info);
+    void set_downlink_join_mic(downlink_join_info& info);
+    bool validate_downlink_join_mic(downlink_join_info& info);
+    mic calculate_downlink_join_mic(downlink_join_info& info);
 
     // For join accept payload
     void encrypt_join_accept_payload(aes128key key);
@@ -135,7 +136,7 @@ struct phy_payload {
     bool is_uplink();
 
     mhdr _mhdr;
-    std::unique_ptr<payload> _mac_payload;
+    std::shared_ptr<payload> _mac_payload;
     mic _mic;
 };
 

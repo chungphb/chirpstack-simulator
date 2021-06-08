@@ -4,6 +4,10 @@
 
 #include <chirpstack_simulator/core/lora/phy_payload.h>
 #include <chirpstack_simulator/core/lora/mac_payload.h>
+#include <chirpstack_simulator/util/helper.h>
+#include <spdlog/spdlog.h>
+#include <cmac.h>
+#include <aes.h>
 
 namespace chirpstack_simulator {
 namespace lora {
@@ -11,6 +15,19 @@ namespace lora {
 std::vector<byte> aes128key::marshal_binary() {
     std::vector<byte> res{_value.rbegin(), _value.rend()};
     return res;
+}
+
+void aes128key::unmarshal_binary(const std::vector<byte>& data) {
+    if (data.size() != _value.size()) {
+        throw std::runtime_error("lora: failed to unmarshal eui64");
+    }
+    for (int i = 0; i < _value.size(); ++i) {
+        _value[_value.size() - (i + 1)] = data[i];
+    }
+}
+
+std::basic_string<byte> aes128key::string() {
+    return to_hex_string(_value.data(), _value.size());
 }
 
 bool mic::operator==(const mic& rhs) const {
@@ -26,15 +43,6 @@ bool mic::operator!=(const mic& rhs) const {
     return !operator==(rhs);
 }
 
-void aes128key::unmarshal_binary(const std::vector<byte>& data) {
-    if (data.size() != _value.size()) {
-        throw std::runtime_error("lora: failed to unmarshal eui64");
-    }
-    for (int i = 0; i < _value.size(); ++i) {
-        _value[_value.size() - (i + 1)] = data[i];
-    }
-}
-
 std::vector<byte> mhdr::marshal_binary() {
     byte res = (static_cast<byte>(_m_type) << 5) | (static_cast<byte>(_major) & 0x03);
     return {res};
@@ -48,11 +56,11 @@ void mhdr::unmarshal_binary(const std::vector<byte>& data) {
     _major = static_cast<major>(data[0] & 0x03);
 }
 
-void phy_payload::set_uplink_data_mic(const uplink_data_info& info) {
+void phy_payload::set_uplink_data_mic(uplink_data_info& info) {
     _mic = calculate_uplink_data_mic(info);
 }
 
-bool phy_payload::validate_uplink_data_mic(const uplink_data_info& info) {
+bool phy_payload::validate_uplink_data_mic(uplink_data_info& info) {
     auto mic = calculate_uplink_data_mic(info);
     return _mic == mic;
 }
@@ -77,46 +85,79 @@ bool phy_payload::validate_uplink_data_micf(aes128key f_nwk_s_int_key) {
     return true;
 }
 
-mic phy_payload::calculate_uplink_data_mic(const uplink_data_info& info) {
+mic phy_payload::calculate_uplink_data_mic(uplink_data_info& info) {
     return mic{};
 }
 
-void phy_payload::set_downlink_data_mic(const downlink_data_info& info) {
+void phy_payload::set_downlink_data_mic(downlink_data_info& info) {
     _mic = calculate_downlink_data_mic(info);
 }
 
-bool phy_payload::validate_downlink_data_mic(const downlink_data_info& info) {
+bool phy_payload::validate_downlink_data_mic(downlink_data_info& info) {
     auto mic = calculate_downlink_data_mic(info);
     return _mic == mic;
 }
 
-mic phy_payload::calculate_downlink_data_mic(const downlink_data_info& info) {
+mic phy_payload::calculate_downlink_data_mic(downlink_data_info& info) {
     return mic{};
 }
 
-void phy_payload::set_uplink_join_mic(const uplink_join_info& info) {
+void phy_payload::set_uplink_join_mic(uplink_join_info& info) {
     _mic = calculate_uplink_join_mic(info);
 }
 
-bool phy_payload::validate_uplink_join_mic(const uplink_join_info& info) {
+bool phy_payload::validate_uplink_join_mic(uplink_join_info& info) {
     auto mic = calculate_uplink_join_mic(info);
     return _mic == mic;
 }
 
-mic phy_payload::calculate_uplink_join_mic(const uplink_join_info& info) {
-    return mic{};
+mic phy_payload::calculate_uplink_join_mic(uplink_join_info& info) {
+    if (_mac_payload == nullptr) {
+        throw std::runtime_error("lora: mac_payload should not be null");
+    }
+    mic mic{};
+    std::vector<byte> encoded;
+    std::vector<byte> plain;
+    std::vector<byte> bytes;
+
+    // Marshal MAC header
+    bytes = _mhdr.marshal_binary();
+    plain.insert(plain.end(), bytes.begin(), bytes.end());
+
+    // Marshal MAC payload
+    bytes = _mac_payload->marshal_binary();
+    plain.insert(plain.end(), bytes.begin(), bytes.end());
+
+    // Encode
+    CryptoPP::SecByteBlock key{CryptoPP::AES::DEFAULT_KEYLENGTH};
+    for (int i = 0; i < key.size(); ++i) {
+        key[i] = (CryptoPP::byte)info._key._value[i];
+    }
+    try {
+        CryptoPP::CMAC<CryptoPP::AES> cmac{key.data(), key.size()};
+        cmac.Update((const CryptoPP::byte*)plain.data(), plain.size());
+        encoded.resize(cmac.DigestSize());
+        cmac.Final((CryptoPP::byte*)&encoded[0]);
+    } catch (const CryptoPP::Exception& ex) {
+        spdlog::error("Failed to encrypt: {}",  ex.what());
+    }
+    if (encoded.size() < 4) {
+        throw std::runtime_error("lora: the hash returned less than 4 bytes");
+    }
+    std::copy_n(encoded.begin(), 4, mic._value.begin());
+    return mic;
 }
 
-void phy_payload::set_downlink_join_mic(const downlink_join_info& info) {
+void phy_payload::set_downlink_join_mic(downlink_join_info& info) {
     _mic = calculate_downlink_join_mic(info);
 }
 
-bool phy_payload::validate_downlink_join_mic(const downlink_join_info& info) {
+bool phy_payload::validate_downlink_join_mic(downlink_join_info& info) {
     auto mic = calculate_downlink_join_mic(info);
     return _mic == mic;
 }
 
-mic phy_payload::calculate_downlink_join_mic(const downlink_join_info& info) {
+mic phy_payload::calculate_downlink_join_mic(downlink_join_info& info) {
     return mic{};
 }
 
@@ -196,22 +237,22 @@ void phy_payload::unmarshal_binary(const std::vector<byte>& data) {
     bytes = {data.begin() + 1, data.begin() + data.size() - 4};
     switch (_mhdr._m_type) {
         case m_type::join_request: {
-            _mac_payload = std::make_unique<join_request_payload>();
+            _mac_payload = std::make_shared<join_request_payload>();
             break;
         }
         case m_type::join_accept: {
-            _mac_payload = std::make_unique<data_payload>();
+            _mac_payload = std::make_shared<data_payload>();
             break;
         }
         case m_type::rejoin_request: {
             switch (data[1]) {
                 case 0:
                 case 2: {
-                    _mac_payload = std::make_unique<rejoin_request_type_02_payload>();
+                    _mac_payload = std::make_shared<rejoin_request_type_02_payload>();
                     break;
                 }
                 case 1: {
-                    _mac_payload = std::make_unique<rejoin_request_type_1_payload>();
+                    _mac_payload = std::make_shared<rejoin_request_type_1_payload>();
                     break;
                 }
                 default: {
@@ -221,11 +262,11 @@ void phy_payload::unmarshal_binary(const std::vector<byte>& data) {
             break;
         }
         case m_type::proprietary: {
-            _mac_payload = std::make_unique<data_payload>();
+            _mac_payload = std::make_shared<data_payload>();
             break;
         }
         default: {
-            _mac_payload = std::make_unique<mac_payload>();
+            _mac_payload = std::make_shared<mac_payload>();
             break;
         }
     }
