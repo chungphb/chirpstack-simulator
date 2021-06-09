@@ -8,6 +8,8 @@
 #include <spdlog/spdlog.h>
 #include <cmac.h>
 #include <aes.h>
+#include <modes.h>
+#include <filters.h>
 
 namespace chirpstack_simulator {
 namespace lora {
@@ -158,7 +160,60 @@ bool phy_payload::validate_downlink_join_mic(downlink_join_info& info) {
 }
 
 mic phy_payload::calculate_downlink_join_mic(downlink_join_info& info) {
-    return mic{};
+    if (_mac_payload == nullptr) {
+        throw std::runtime_error("lora: mac_payload should not be null");
+    }
+
+    auto payload = std::dynamic_pointer_cast<join_accept_payload>(_mac_payload);
+    if (!payload) {
+        throw std::runtime_error("lora: mac_payload should be of type join_accept_payload");
+    }
+
+    mic mic{};
+    std::vector<byte> encoded;
+    std::vector<byte> plain;
+    std::vector<byte> bytes;
+
+    // Marshal input
+    if (payload->_dl_settings._opt_neg) {
+        // Marshal join type
+        plain.push_back(static_cast<byte>(info._join_req_type));
+
+        // Marshal join EUI
+        bytes = info._join_eui.marshal_binary();
+        plain.insert(plain.end(), bytes.begin(), bytes.end());
+
+        // Marshal device nonce
+        bytes = info._dev_nonce.marshal_binary();
+        plain.insert(plain.end(), bytes.begin(), bytes.end());
+    }
+
+    // Marshal MAC header
+    bytes = _mhdr.marshal_binary();
+    plain.insert(plain.end(), bytes.begin(), bytes.end());
+
+    // Marshal MAC payload
+    bytes = _mac_payload->marshal_binary();
+    plain.insert(plain.end(), bytes.begin(), bytes.end());
+
+    // Encode
+    CryptoPP::SecByteBlock key{CryptoPP::AES::DEFAULT_KEYLENGTH};
+    for (int i = 0; i < key.size(); ++i) {
+        key[i] = (CryptoPP::byte)info._key._value[i];
+    }
+    try {
+        CryptoPP::CMAC<CryptoPP::AES> cmac{key.data(), key.size()};
+        cmac.Update((const CryptoPP::byte*)plain.data(), plain.size());
+        encoded.resize(cmac.DigestSize());
+        cmac.Final((CryptoPP::byte*)&encoded[0]);
+    } catch (const CryptoPP::Exception& ex) {
+        spdlog::error("Failed to encrypt: {}",  ex.what());
+    }
+    if (encoded.size() < 4) {
+        throw std::runtime_error("lora: the hash returned less than 4 bytes");
+    }
+    std::copy_n(encoded.begin(), 4, mic._value.begin());
+    return mic;
 }
 
 void phy_payload::encrypt_join_accept_payload(aes128key key) {
@@ -166,7 +221,25 @@ void phy_payload::encrypt_join_accept_payload(aes128key key) {
 }
 
 void phy_payload::decrypt_join_accept_payload(aes128key key) {
-
+    auto payload = std::dynamic_pointer_cast<data_payload>(_mac_payload);
+    auto data = payload->_data;
+    data.insert(data.end(), _mic._value.begin(), _mic._value.end());
+    if (data.size() % 16) {
+        throw std::runtime_error("lora: plain text must be a multiple of 16 bytes");
+    }
+    std::string encrypted;
+    CryptoPP::ECB_Mode<CryptoPP::AES>::Encryption encryption;
+    encryption.SetKey((const CryptoPP::byte*)key._value.data(), CryptoPP::AES::DEFAULT_KEYLENGTH);
+    for (int i = 0; i < data.size() / 16; i++) {
+        std::string plain{data.begin() + i * 16, data.begin() + i * 16 + 16};
+        std::string cipher;
+        CryptoPP::StreamTransformationFilter encryptor{encryption, new CryptoPP::StringSink(cipher)};
+        encryptor.Put((const CryptoPP::byte*)plain.data(), plain.size());
+        encrypted += cipher;
+    }
+    _mac_payload = std::make_shared<join_accept_payload>();
+    std::copy_n(encrypted.data() + encrypted.size() - 4, 4, _mic._value.data());
+    _mac_payload->unmarshal_binary({encrypted.data(), encrypted.data() + encrypted.size() - 4}, is_uplink());
 }
 
 void phy_payload::encrypt_f_opts(aes128key nwk_s_enc_key) {

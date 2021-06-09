@@ -5,8 +5,8 @@
 #include <chirpstack_simulator/core/gateway.h>
 #include <chirpstack_simulator/util/helper.h>
 #include <spdlog/spdlog.h>
+#include <json11.hpp>
 #include <sstream>
-#include <thread>
 #include <chrono>
 
 namespace chirpstack_simulator {
@@ -35,6 +35,10 @@ void gateway::stop() {
     close(_pull_socket_fd);
 }
 
+void gateway::add_device(lora::eui64 dev_eui, std::shared_ptr<channel<gw::DownlinkFrame>> channel) {
+    _devices.emplace(dev_eui, std::move(channel));
+}
+
 void gateway::send_uplink_frame(gw::UplinkFrame frame) {
     // Generate PUSH_DATA packet
     gw::UplinkRXInfo* rx_info = frame.mutable_rx_info();
@@ -46,14 +50,14 @@ void gateway::send_uplink_frame(gw::UplinkFrame frame) {
     spdlog::debug("Gateway {}: Send PUSH_DATA packet", _gateway_id.string());
 
     // Handle PUSH_ACK packet
-    byte ack[1024];
-    auto ack_len = timeout_recvfrom(_push_socket_fd, ack, 1024, _server, 4);
+    byte resp[1024];
+    auto resp_len = timeout_recvfrom(_push_socket_fd, resp, 1024, _server, 4);
     if (_stopped) {
         return;
     }
-    if (ack_len > 0) {
-        ack[ack_len] = '\0';
-        if (ack_len == 4) {
+    if (resp_len > 0) {
+        resp[resp_len] = '\0';
+        if (is_push_ack(resp, resp_len, packet)) {
             spdlog::debug("Gateway {}: Receive PUSH_ACK packet", _gateway_id.string());
         } else {
             spdlog::error("Gateway {}: Receive invalid ACK packet", _gateway_id.string());
@@ -83,22 +87,30 @@ void gateway::keep_alive() {
 void gateway::handle_downlink_frame() {
     while (!_stopped) {
         // Handle PULL_RESP / PULL_ACK packet
-        byte ack[1024];
-        auto ack_len = timeout_recvfrom(_pull_socket_fd, ack, 1024, _server, 16);
+        byte resp[1024];
+        auto resp_len = timeout_recvfrom(_pull_socket_fd, resp, 1024, _server, 16);
         if (_stopped) {
             return;
         }
-        if (ack_len > 0) {
-            ack[ack_len] = '\0';
-            if (ack_len > 4) {
+        if (resp_len > 0) {
+            resp[resp_len] = '\0';
+            if (is_pull_resp(resp, resp_len)) {
                 spdlog::debug("Gateway {}: Receive PULL_RESP packet", _gateway_id.string());
-            } else if (ack_len == 4) {
+                gw::DownlinkFrame frame;
+                std::string res(resp + 4, resp_len - 4);
+                std::string err;
+                auto json = json11::Json::parse(res, err);
+                frame.set_phy_payload(json["txpk"]["data"].string_value());
+                for (auto& device : _devices) {
+                    device.second->put(frame);
+                }
+            } else if (is_pull_ack(resp, resp_len)) {
                 spdlog::debug("Gateway {}: Receive PULL_ACK packet", _gateway_id.string());
                 _connected = true;
             } else {
                 spdlog::error("Gateway {}: Receive invalid ACK packet", _gateway_id.string());
             }
-        } else if (ack_len < 0) {
+        } else if (resp_len < 0) {
             spdlog::error("Gateway {}: Not receive any packet", _gateway_id.string());
             _connected = false;
         }
@@ -180,6 +192,36 @@ std::vector<byte> gateway::generate_pull_data_packet() {
 
     // Return
     return packet;
+}
+
+bool gateway::is_push_ack(const byte* resp, size_t resp_len, const std::vector<byte>& packet) {
+    if (resp_len != 4) {
+        return false;
+    }
+    if (resp[0] != 0x02 || resp[1] != packet[1] || resp[2] != packet[2] || resp[3] != 0x01) {
+        return false;
+    }
+    return true;
+}
+
+bool gateway::is_pull_ack(const byte* resp, size_t resp_len) {
+    if (resp_len != 4) {
+        return false;
+    }
+    if (resp[0] != 0x02 || resp[3] != 0x04) { // TODO: Compare PULL_DATA and PULL_ACK token
+        return false;
+    }
+    return true;
+}
+
+bool gateway::is_pull_resp(const byte* resp, size_t resp_len) {
+    if (resp_len <= 4) {
+        return false;
+    }
+    if (resp[0] != 0x02 || resp[3] != 0x03) {
+        return false;
+    }
+    return true;
 }
 
 void rxpk::add(std::string field_name, const std::string& field_value) {

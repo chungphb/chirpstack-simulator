@@ -16,3 +16,6 @@
 [submodule "modules/cryptopp-cmake"]
 	path = modules/cryptopp-cmake
 	url = https://github.com/noloader/cryptopp-cmake
+[submodule "modules/json11"]
+	path = modules/json11
+	url = https://github.com/dropbox/json11

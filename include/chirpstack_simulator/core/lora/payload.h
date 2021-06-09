@@ -22,6 +22,7 @@ struct eui64 {
     std::vector<byte> marshal_binary();
     void unmarshal_binary(const std::vector<byte>& data);
     std::basic_string<byte> string();
+    bool operator<(const eui64& rhs) const;
     std::array<byte, 8> _value;
 };
 

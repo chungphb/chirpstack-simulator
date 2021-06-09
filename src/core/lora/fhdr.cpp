@@ -107,11 +107,7 @@ void fhdr::unmarshal_binary(const std::vector<byte>& data) {
     bytes = {data.begin() + 5, data.begin() + 7};
     bytes.push_back(0x00);
     bytes.push_back(0x00);
-    std::array<byte, sizeof(_f_cnt)> f_cnt_bytes{};
-    for (int i = 0; i < bytes.size(); ++i) {
-        f_cnt_bytes[f_cnt_bytes.size() - (i + 1)] = bytes[i];
-    }
-    std::memcpy(&_f_cnt, f_cnt_bytes.data(), sizeof(_f_cnt));
+    std::memcpy(&_f_cnt, bytes.data(), sizeof(_f_cnt));
 
     // Unmarshal frame options
     if (data.size() > 7) {

@@ -69,6 +69,9 @@ void simulator::init() {
         dev->_confirmed = false;
         std::copy(_config._payload.begin(), _config._payload.end(), std::back_inserter(dev->_payload));
 
+        // Set downlink payload
+        dev->_downlink_frames = std::make_shared<channel<gw::DownlinkFrame>>();
+
         // Set gateway
         auto gw_count = get_random_number(_config._gw_min_count, _config._gw_max_count);
         std::vector<size_t> gw_list;
@@ -78,7 +81,7 @@ void simulator::init() {
                 return rand_id == gw_id;
             });
             if (gw_it == gw_list.end()) {
-                dev->_gateways.push_back(_gw_list[rand_id]);
+                dev->add_gateway(_gw_list[rand_id]);
             } else {
                 --j;
             }

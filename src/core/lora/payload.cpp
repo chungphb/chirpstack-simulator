@@ -27,11 +27,20 @@ std::basic_string<byte> eui64::string() {
     return to_hex_string(_value.data(), _value.size());
 }
 
+bool eui64::operator<(const eui64& rhs) const {
+    for (int i = 0; i < _value.size(); ++i) {
+        if (_value[i] < rhs._value[i]) {
+            return true;
+        }
+    }
+    return false;
+}
+
 std::vector<byte> dev_nonce::marshal_binary() {
     std::vector<byte> res;
     std::array<byte, sizeof(_value)> bytes{};
     std::memcpy(bytes.data(), &_value, sizeof(_value));
-    res.insert(res.end(), bytes.rbegin(), bytes.rend());
+    res.insert(res.end(), bytes.begin(), bytes.end());
     return res;
 }
 
@@ -39,29 +48,27 @@ void dev_nonce::unmarshal_binary(const std::vector<byte>& data) {
     if (data.size() != sizeof(_value)) {
         throw std::runtime_error("lora: failed to unmarshal device nonce");
     }
-    std::array<byte, sizeof(_value)> bytes{};
-    for (int i = 0; i < bytes.size(); ++i) {
-        bytes[bytes.size() - (i + 1)] = data[i];
-    }
-    std::memcpy(&_value, bytes.data(), sizeof(_value));
+    std::memcpy(&_value, data.data(), sizeof(_value));
 }
 
 std::vector<byte> join_nonce::marshal_binary() {
+    if (_value >= (1 << 24)) {
+        throw std::runtime_error("lora: max value of join nonce is 2^24 - 1");
+    }
     std::vector<byte> res;
     std::array<byte, sizeof(_value)> bytes{};
     std::memcpy(bytes.data(), &_value, sizeof(_value));
-    res.insert(res.end(), bytes.rbegin(), bytes.rend());
+    res.insert(res.end(), bytes.begin(), bytes.begin() + 3);
     return res;
 }
 
 void join_nonce::unmarshal_binary(const std::vector<byte>& data) {
-    if (data.size() != sizeof(_value)) {
+    if (data.size() != 3) {
         throw std::runtime_error("lora: failed to unmarshal join nonce");
     }
-    std::array<byte, sizeof(_value)> bytes{};
-    for (int i = 0; i < bytes.size(); ++i) {
-        bytes[bytes.size() - (i + 1)] = data[i];
-    }
+    std::vector<byte> bytes;
+    bytes = data;
+    bytes.push_back(0x00);
     std::memcpy(&_value, bytes.data(), sizeof(_value));
 }
 
@@ -186,11 +193,11 @@ std::vector<byte> cf_list_channel_payload::marshal_binary() {
             throw std::runtime_error("lora: invalid frequency");
         }
         freq = channel / 100;
-        if (freq >= (1 >> 24)) {
+        if (freq >= (1 << 24)) {
             throw std::runtime_error("lora: invalid frequency");
         }
         std::memcpy(bytes.data(), &freq, sizeof(freq));
-        res.insert(res.end(), bytes.rbegin(), bytes.rbegin() + 3);
+        res.insert(res.end(), bytes.begin(), bytes.begin() + 3);
     }
     return res;
 }
@@ -201,14 +208,10 @@ void cf_list_channel_payload::unmarshal_binary(const std::vector<byte>& data, bo
     }
     std::vector<byte> bytes;
     uint32_t freq;
-    std::array<byte, sizeof(freq)> freq_bytes{};
     for (int i = 0; i < data.size() / 3; ++i) {
         bytes = {data.begin() + i * 3, data.begin() + i * 3 + 3};
         bytes.push_back(0x00);
-        for (int j = 0; j < bytes.size(); ++j) {
-            freq_bytes[freq_bytes.size() - (i + 1)] = bytes[i];
-        }
-        std::memcpy(&freq, freq_bytes.data(), sizeof(freq));
+        std::memcpy(&freq, bytes.data(), sizeof(freq));
         _channels[i] = freq * 100;
     }
 }
@@ -223,7 +226,7 @@ std::vector<byte> ch_mask::marshal_binary() {
         }
     }
     std::memcpy(bytes.data(), &mask, sizeof(mask));
-    res.insert(res.end(), bytes.rbegin(), bytes.rend());
+    res.insert(res.end(), bytes.begin(), bytes.end());
     return res;
 }
 
@@ -232,11 +235,7 @@ void ch_mask::unmarshal_binary(const std::vector<byte>& data) {
         throw std::runtime_error("lora: failed to unmarshal channel mask");
     }
     uint16_t mask = 0;
-    std::array<byte, sizeof(mask)> bytes{};
-    for (int i = 0; i < bytes.size(); ++i) {
-        bytes[bytes.size() - (i + 1)] = data[i];
-    }
-    std::memcpy(&mask, bytes.data(), sizeof(mask));
+    std::memcpy(&mask, data.data(), sizeof(mask));
     for (int i = 0; i < _value.size(); ++i) {
         _value[i] = (mask & static_cast<uint16_t>(1 << i)) != 0;
     }
@@ -371,7 +370,7 @@ std::vector<byte> rejoin_request_type_02_payload::marshal_binary() {
     // Marshal rejoin count
     std::array<byte, sizeof(_rj_count_0)> rj_count_bytes{};
     std::memcpy(rj_count_bytes.data(), &_rj_count_0, sizeof(_rj_count_0));
-    res.insert(res.end(), rj_count_bytes.rbegin(), rj_count_bytes.rend());
+    res.insert(res.end(), rj_count_bytes.begin(), rj_count_bytes.end());
 
     // Return
     return res;
@@ -396,11 +395,7 @@ void rejoin_request_type_02_payload::unmarshal_binary(const std::vector<byte>& d
 
     // Unmarshal rejoin count
     bytes = {data.begin() + 12, data.end()};
-    std::array<byte, sizeof(_rj_count_0)> rj_count_bytes{};
-    for (int i = 0; i < rj_count_bytes.size(); ++i) {
-        rj_count_bytes[rj_count_bytes.size() - (i + 1)] = bytes[i];
-    }
-    std::memcpy(&_rj_count_0, rj_count_bytes.data(), sizeof(_rj_count_0));
+    std::memcpy(&_rj_count_0, bytes.data(), sizeof(_rj_count_0));
 }
 
 std::vector<byte> rejoin_request_type_1_payload::marshal_binary() {
@@ -425,7 +420,7 @@ std::vector<byte> rejoin_request_type_1_payload::marshal_binary() {
     // Marshal rejoin count
     std::array<byte, sizeof(_rj_count_1)> rj_count_bytes{};
     std::memcpy(rj_count_bytes.data(), &_rj_count_1, sizeof(_rj_count_1));
-    res.insert(res.end(), rj_count_bytes.rbegin(), rj_count_bytes.rend());
+    res.insert(res.end(), rj_count_bytes.begin(), rj_count_bytes.end());
 
     // Return
     return res;
@@ -450,11 +445,7 @@ void rejoin_request_type_1_payload::unmarshal_binary(const std::vector<byte>& da
 
     // Unmarshal rejoin count
     bytes = {data.begin() + 17, data.end()};
-    std::array<byte, sizeof(_rj_count_1)> rj_count_bytes{};
-    for (int i = 0; i < rj_count_bytes.size(); ++i) {
-        rj_count_bytes[rj_count_bytes.size() - (i + 1)] = bytes[i];
-    }
-    std::memcpy(&_rj_count_1, rj_count_bytes.data(), sizeof(_rj_count_1));
+    std::memcpy(&_rj_count_1, bytes.data(), sizeof(_rj_count_1));
 }
 
 }

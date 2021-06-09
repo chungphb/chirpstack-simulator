@@ -7,7 +7,6 @@
 #include <chirpstack_simulator/core/gateway.h>
 #include <chirpstack_simulator/core/lora/phy_payload.h>
 #include <gw/gw.grpc.pb.h>
-#include <future>
 
 namespace chirpstack_simulator {
 
@@ -22,6 +21,7 @@ struct device {
 public:
     void run();
     void stop();
+    void add_gateway(std::shared_ptr<gateway> gateway);
     friend struct simulator;
 
 private:
@@ -30,6 +30,8 @@ private:
     void send_data();
     void send_uplink(lora::phy_payload phy_payload);
     void downlink_loop();
+    void handle_join_accept(lora::phy_payload phy_payload);
+    void handle_data(lora::phy_payload phy_payload);
     lora::dev_nonce get_dev_nonce();
 
 private:
@@ -44,10 +46,11 @@ private:
     lora::dev_addr _dev_addr;
     lora::dev_nonce _dev_nonce;
     uint32_t _f_cnt_up = 0;
+    uint32_t _f_cnt_down = 0;
     lora::aes128key _app_s_key;
     lora::aes128key _nwk_s_key;
     device_state _dev_state = device_state::otaa;
-    std::vector<gw::DownlinkFrame> _downlink_frames;
+    std::shared_ptr<channel<gw::DownlinkFrame>> _downlink_frames;
     std::vector<std::shared_ptr<gateway>> _gateways;
     bool _rand_dev_nonce = false;
     gw::UplinkTXInfo _uplink_tx_info;
@@ -56,5 +59,18 @@ private:
     std::future<void> _downlink_loop;
     bool _stopped = false;
 };
+
+struct key_info {
+    bool _opt_neg;
+    lora::aes128key _nwk_key;
+    lora::net_id _net_id;
+    lora::eui64 _join_eui;
+    lora::join_nonce _join_nonce;
+    lora::dev_nonce _dev_nonce;
+};
+
+lora::aes128key get_app_s_key(key_info& info);
+lora::aes128key get_nwk_s_key(key_info& info);
+lora::aes128key get_s_key(key_info& info, byte type);
 
 }
