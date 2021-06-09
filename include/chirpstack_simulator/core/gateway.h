@@ -9,6 +9,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <future>
 #include <map>
 
 namespace chirpstack_simulator {
@@ -20,16 +21,24 @@ public:
     void run();
     void stop();
     void send_uplink_frame(gw::UplinkFrame payload);
+    void keep_alive();
+    void handle_downlink_frame();
     friend struct simulator;
 
 private:
     std::vector<byte> generate_push_data_packet(const gw::UplinkFrame& payload);
+    std::vector<byte> generate_pull_data_packet();
 
 private:
-    int _socket_fd;
+    int _push_socket_fd;
+    int _pull_socket_fd;
     sockaddr_in _server;
     lora::eui64 _gateway_id;
     gw::UplinkRXInfo _uplink_rx_info;
+    std::future<void> _keep_alive;
+    std::future<void> _handle_downlink_frame;
+    bool _connected = false;
+    bool _stopped = false;
 };
 
 struct rxpk {

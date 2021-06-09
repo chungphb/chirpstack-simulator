@@ -131,7 +131,7 @@ void simulator::stop() {
 
     // Stop gateways
     for (const auto& gw : _gw_list) {
-        gw->run();
+        gw->stop();
     }
 }
 
@@ -292,7 +292,7 @@ void simulator::tear_down_devices() {
         if (!response.is_valid()) {
             spdlog::error("Failed to delete device: {}", response.error_code());
         } else {
-            spdlog::debug("Delte device {}", dev->_dev_eui.string());
+            spdlog::debug("Delete device {}", dev->_dev_eui.string());
         }
     }
 }
