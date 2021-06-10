@@ -25,11 +25,13 @@ public:
     void send_uplink_frame(gw::UplinkFrame payload);
     void keep_alive();
     void handle_downlink_frame();
+    void send_downlink_tx_ack(gw::DownlinkTXAck ack);
     friend struct simulator;
 
 private:
     std::vector<byte> generate_push_data_packet(const gw::UplinkFrame& payload);
     std::vector<byte> generate_pull_data_packet();
+    std::vector<byte> generate_tx_ack_packet(const gw::DownlinkTXAck& ack);
     bool is_push_ack(const byte* resp, size_t resp_len, const std::vector<byte>& packet);
     bool is_pull_ack(const byte* resp, size_t resp_len);
     bool is_pull_resp(const byte* resp, size_t resp_len);

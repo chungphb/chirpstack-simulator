@@ -13,7 +13,6 @@
 #include <modes.h>
 #include <filters.h>
 
-
 namespace chirpstack_simulator {
 
 using namespace std::chrono_literals;
@@ -77,6 +76,7 @@ void device::send_join_request() {
     phy_payload.set_uplink_join_mic(info);
 
     // Send payload
+    spdlog::debug("DEV {}: Send Join request", _dev_eui.string());
     send_uplink(std::move(phy_payload));
 }
 
@@ -111,9 +111,9 @@ void device::send_data() {
     info._s_nwk_s_int_key = _nwk_s_key;
     phy_payload.set_uplink_data_mic(info);
 
-    ++_f_cnt_up;
-
     // Send payload
+    spdlog::debug("DEV {}: Send packet #{}", _dev_eui.string(), _f_cnt_up);
+    ++_f_cnt_up;
     send_uplink(std::move(phy_payload));
 }
 
@@ -144,12 +144,12 @@ void device::downlink_loop() {
             switch (phy_payload._mhdr._m_type) {
                 case lora::m_type::join_accept: {
                     handle_join_accept(std::move(phy_payload));
-                    break;;
+                    break;
                 }
                 case lora::m_type::unconfirmed_data_down:
                 case lora::m_type::confirmed_data_down: {
                     handle_data(std::move(phy_payload));
-                    break;;
+                    break;
                 }
                 default: {
                     throw std::runtime_error("Something went wrong");
@@ -161,7 +161,9 @@ void device::downlink_loop() {
 }
 
 void device::handle_join_accept(lora::phy_payload phy_payload) {
-    spdlog::debug("Handle Join accept");
+    spdlog::debug("DEV {}: Handle Join accept", _dev_eui.string());
+
+    // Decrypt Join Accept payload
     phy_payload.decrypt_join_accept_payload(_app_key);
 
     // Validate MIC
@@ -198,7 +200,7 @@ void device::handle_join_accept(lora::phy_payload phy_payload) {
 }
 
 void device::handle_data(lora::phy_payload phy_payload) {
-    spdlog::debug("Handle data");
+    spdlog::debug("DEV {}: Handle packet #{}", _dev_eui.string(), _f_cnt_down);
 }
 
 lora::dev_nonce device::get_dev_nonce() {

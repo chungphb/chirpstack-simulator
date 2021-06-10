@@ -122,7 +122,7 @@ void simulator::run() {
 }
 
 void simulator::stop() {
-    spdlog::info("STOP");
+    spdlog::info("[STOP]");
 
     // Tear down client
     tear_down_client();

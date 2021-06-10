@@ -47,7 +47,7 @@ void gateway::send_uplink_frame(gw::UplinkFrame frame) {
 
     // Send PUSH_DATA packet
     sendto(_push_socket_fd, packet.data(), packet.size(), MSG_CONFIRM, (const sockaddr*)&_server, sizeof(_server));
-    spdlog::debug("Gateway {}: Send PUSH_DATA packet", _gateway_id.string());
+    spdlog::trace("GTW {}: Send PUSH_DATA packet", _gateway_id.string());
 
     // Handle PUSH_ACK packet
     byte resp[1024];
@@ -58,12 +58,12 @@ void gateway::send_uplink_frame(gw::UplinkFrame frame) {
     if (resp_len > 0) {
         resp[resp_len] = '\0';
         if (is_push_ack(resp, resp_len, packet)) {
-            spdlog::debug("Gateway {}: Receive PUSH_ACK packet", _gateway_id.string());
+            spdlog::trace("GTW {}: Receive PUSH_ACK packet", _gateway_id.string());
         } else {
-            spdlog::error("Gateway {}: Receive invalid ACK packet", _gateway_id.string());
+            spdlog::error("GTW {}: Receive invalid ACK packet", _gateway_id.string());
         }
     } else {
-        spdlog::error("Gateway {}: Not receive any packet", _gateway_id.string());
+        spdlog::error("GTW {}: Not receive any packet", _gateway_id.string());
     }
 }
 
@@ -74,7 +74,7 @@ void gateway::keep_alive() {
 
         // Send PULL_DATA packet
         sendto(_pull_socket_fd, packet.data(), packet.size(), MSG_CONFIRM, (const sockaddr*)&_server, sizeof(_server));
-        spdlog::debug("Gateway {}: Send PULL_DATA packet", _gateway_id.string());
+        spdlog::trace("GTW {}: Send PULL_DATA packet", _gateway_id.string());
 
         // Wait for the next cycle
         std::this_thread::sleep_for(1s);
@@ -95,7 +95,9 @@ void gateway::handle_downlink_frame() {
         if (resp_len > 0) {
             resp[resp_len] = '\0';
             if (is_pull_resp(resp, resp_len)) {
-                spdlog::debug("Gateway {}: Receive PULL_RESP packet", _gateway_id.string());
+                spdlog::trace("GTW {}: Receive PULL_RESP packet", _gateway_id.string());
+
+                // Handle PULL_RESP packet
                 gw::DownlinkFrame frame;
                 std::string res(resp + 4, resp_len - 4);
                 std::string err;
@@ -104,20 +106,37 @@ void gateway::handle_downlink_frame() {
                 for (auto& device : _devices) {
                     device.second->put(frame);
                 }
+
+                // Send TX_ACK packet
+                gw::DownlinkTXAck ack;
+                uint32_t token;
+                std::array<byte, sizeof(token)> bytes{resp[2], resp[1], 0x00, 0x00};
+                std::memcpy(&token, bytes.data(), sizeof(token));
+                ack.set_token(token);
+                send_downlink_tx_ack(std::move(ack));
             } else if (is_pull_ack(resp, resp_len)) {
-                spdlog::debug("Gateway {}: Receive PULL_ACK packet", _gateway_id.string());
+                spdlog::trace("GTW {}: Receive PULL_ACK packet", _gateway_id.string());
                 _connected = true;
             } else {
-                spdlog::error("Gateway {}: Receive invalid ACK packet", _gateway_id.string());
+                spdlog::error("GTW {}: Receive invalid packet", _gateway_id.string());
             }
         } else if (resp_len < 0) {
-            spdlog::error("Gateway {}: Not receive any packet", _gateway_id.string());
+            spdlog::error("GTW {}: Not receive any packet", _gateway_id.string());
             _connected = false;
         }
 
         // Wait for next cycle
         std::this_thread::sleep_for(50ms);
     }
+}
+
+void gateway::send_downlink_tx_ack(gw::DownlinkTXAck ack) {
+    // Generate TX_ACK packet
+    auto packet = generate_tx_ack_packet(ack);
+
+    // Send TX_ACK packet
+    sendto(_pull_socket_fd, packet.data(), packet.size(), MSG_CONFIRM, (const sockaddr*)&_server, sizeof(_server));
+    spdlog::trace("GTW {}: Send TX_ACK packet", _gateway_id.string());
 }
 
 std::vector<byte> gateway::generate_push_data_packet(const gw::UplinkFrame& payload) {
@@ -184,6 +203,31 @@ std::vector<byte> gateway::generate_pull_data_packet() {
 
     // Set PULL_DATA identifier
     packet.push_back(0x02);
+
+    // Set gateway identifier
+    for (const auto& byte : _gateway_id._value) {
+        packet.push_back(byte);
+    }
+
+    // Return
+    return packet;
+}
+
+std::vector<byte> gateway::generate_tx_ack_packet(const gw::DownlinkTXAck& ack) {
+    std::vector<byte> packet;
+
+    // Set protocol version
+    packet.push_back(0x02);
+
+    // Set random token
+    auto token = ack.token();
+    std::array<byte, sizeof(token)> bytes{};
+    std::memcpy(bytes.data(), &token, sizeof(token));
+    packet.push_back(bytes[1]);
+    packet.push_back(bytes[0]);
+
+    // Set PULL_DATA identifier
+    packet.push_back(0x05);
 
     // Set gateway identifier
     for (const auto& byte : _gateway_id._value) {
