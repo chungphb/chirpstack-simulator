@@ -83,7 +83,7 @@ void device::send_join_request() {
 void device::send_data() {
     lora::phy_payload phy_payload{};
 
-    // Set MHDR
+    // Set MAC header
     phy_payload._mhdr._m_type = _confirmed ? lora::m_type::confirmed_data_up : lora::m_type::unconfirmed_data_up;
     phy_payload._mhdr._major = lora::major::lorawan_r1;
 
@@ -140,7 +140,11 @@ void device::downlink_loop() {
         if (_downlink_frames->get(frame)) {
             auto payload = base64_decode(frame.phy_payload());
             lora::phy_payload phy_payload{};
-            phy_payload.unmarshal_binary({payload.begin(), payload.end()});
+            try {
+                phy_payload.unmarshal_binary({payload.begin(), payload.end()});
+            } catch (...) {
+                spdlog::error("DEV {}: Invalid payload", _dev_eui.string());
+            }
             switch (phy_payload._mhdr._m_type) {
                 case lora::m_type::join_accept: {
                     handle_join_accept(std::move(phy_payload));
@@ -227,36 +231,40 @@ lora::aes128key get_nwk_s_key(key_info& info) {
 
 lora::aes128key get_s_key(key_info& info, byte type) {
     lora::aes128key key{};
-    std::vector<byte> res(16, 0x00);
+    std::vector<byte> plain(16, 0x00);
     std::vector<byte> bytes;
 
     // Marshal type
-    res.push_back(type);
+    plain[0] = type;
 
     // Marshal join nonce
     bytes = info._join_nonce.marshal_binary();
-    res.insert(res.end(), bytes.begin(), bytes.end());
+    std::copy(bytes.begin(), bytes.end(), plain.begin() + 1);
 
     if (info._opt_neg) {
         // Marshal join EUI
         bytes = info._join_eui.marshal_binary();
+        std::copy(bytes.begin(), bytes.end(), plain.begin() + 4);
+
+        // Marshal device nonce
+        bytes = info._dev_nonce.marshal_binary();
+        std::copy(bytes.begin(), bytes.end(), plain.begin() + 12);
     } else {
         // Marshal net ID
         bytes = info._net_id.marshal_binary();
-    }
-    res.insert(res.end(), bytes.begin(), bytes.end());
+        std::copy(bytes.begin(), bytes.end(), plain.begin() + 4);
 
-    // Marshal device nonce
-    bytes = info._dev_nonce.marshal_binary();
-    res.insert(res.end(), bytes.begin(), bytes.end());
+        // Marshal device nonce
+        bytes = info._dev_nonce.marshal_binary();
+        std::copy(bytes.begin(), bytes.end(), plain.begin() + 7);
+    }
 
     // Encrypt
-    std::string plain(res.data(), res.size());
     std::string cipher;
     CryptoPP::ECB_Mode<CryptoPP::AES>::Encryption encryption;
     encryption.SetKey((const CryptoPP::byte*)info._nwk_key._value.data(), CryptoPP::AES::DEFAULT_KEYLENGTH);
     CryptoPP::StreamTransformationFilter encryptor{encryption, new CryptoPP::StringSink(cipher)};
-    encryptor.Put((const CryptoPP::byte*)res.data(), res.size());
+    encryptor.Put((const CryptoPP::byte*)plain.data(), plain.size());
 
     // Return
     std::copy_n(cipher.begin(), 16, key._value.begin());

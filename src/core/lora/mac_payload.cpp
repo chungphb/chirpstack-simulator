@@ -16,7 +16,7 @@ std::vector<byte> mac_payload::marshal_binary() {
     res.insert(res.end(), bytes.begin(), bytes.end());
 
     // Marshal frame port
-    if (_f_port == nullptr) {
+    if (!_f_port) {
         if (!_frm_payload.empty()) {
             throw std::runtime_error("lora: frm_payload is not empty");
         }
@@ -28,10 +28,8 @@ std::vector<byte> mac_payload::marshal_binary() {
     res.push_back(static_cast<byte>(*_f_port));
 
     // Marshal payloads
-    for (const auto& payload : _frm_payload) {
-        bytes = payload->marshal_binary(); // TODO: Support MAC command
-        res.insert(res.end(), bytes.begin(), bytes.end());
-    }
+    bytes = marshal_payload();
+    res.insert(res.end(), bytes.begin(), bytes.end());
 
     // Return
     return res;
@@ -62,7 +60,7 @@ void mac_payload::unmarshal_binary(const std::vector<byte>& data, bool uplink) {
 
     // Unmarshal frame payloads
     if (data.size() > 7 + _fhdr._f_ctrl._f_opts_len + 1) {
-        if (_f_port != nullptr && *_f_port == 0 && _fhdr._f_ctrl._f_opts_len > 0) {
+        if (_f_port && *_f_port == 0 && _fhdr._f_ctrl._f_opts_len > 0) {
             throw std::runtime_error("lora: f_opts are set");
         }
         bytes = {data.begin() + 7 + _fhdr._f_ctrl._f_opts_len + 1, data.end()};
@@ -70,6 +68,16 @@ void mac_payload::unmarshal_binary(const std::vector<byte>& data, bool uplink) {
         payload._data = std::move(bytes);
         _frm_payload.push_back(std::make_unique<data_payload>(std::move(payload)));
     }
+}
+
+std::vector<byte> mac_payload::marshal_payload() {
+    std::vector<byte> res;
+    std::vector<byte> bytes;
+    for (const auto& payload : _frm_payload) {
+        bytes = payload->marshal_binary(); // TODO: Support MAC command
+        res.insert(res.end(), bytes.begin(), bytes.end());
+    }
+    return res;
 }
 
 }
