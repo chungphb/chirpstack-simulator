@@ -77,15 +77,6 @@ struct phy_payload {
         aes128key _key;
     };
 
-    struct f_opts_info {
-        aes128key _nwk_s_enc_key;
-        bool _f_cnt_down;
-        bool _is_uplink;
-        dev_addr _dev_addr;
-        uint32_t _f_cnt;
-        std::vector<byte> _data;
-    };
-
     struct frm_payload_info {
         aes128key _key;
         bool _is_uplink;
@@ -119,18 +110,12 @@ struct phy_payload {
     void encrypt_join_accept_payload(aes128key key);
     void decrypt_join_accept_payload(aes128key key);
 
-    // For FOpts MAC commands
-    void encrypt_f_opts(aes128key nwk_s_enc_key);
-    void decrypt_f_opts(aes128key nwk_s_enc_key);
-    void decode_f_opts_to_mac_commands();
-    std::vector<byte> encrypt_f_opts(f_opts_info& info);
-
     // For frame payload
     void encrypt_frm_payload(aes128key key);
     void decrypt_frm_payload(aes128key key);
-    void decode_frm_payload_to_mac_commands();
     std::vector<byte> encrypt_frm_payload(frm_payload_info& info);
 
+    // For physical payload
     std::vector<byte> marshal_binary();
     void unmarshal_binary(const std::vector<byte>& data);
     bool is_uplink();

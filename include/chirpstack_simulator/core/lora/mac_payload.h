@@ -15,7 +15,7 @@ struct mac_payload : public payload {
     std::vector<byte> marshal_payload();
     fhdr _fhdr;
     std::unique_ptr<uint8_t> _f_port;
-    std::vector<std::unique_ptr<payload>> _frm_payload;
+    std::vector<std::shared_ptr<payload>> _frm_payload;
 };
 
 }

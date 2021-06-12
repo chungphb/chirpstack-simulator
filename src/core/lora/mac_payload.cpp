@@ -51,7 +51,7 @@ void mac_payload::unmarshal_binary(const std::vector<byte>& data, bool uplink) {
 
     // Unmarshal frame header
     bytes = {data.begin(), data.begin() + 7 + _fhdr._f_ctrl._f_opts_len};
-    _fhdr._f_ctrl.unmarshal_binary(bytes);
+    _fhdr.unmarshal_binary(bytes);
 
     // Unmarshal frame port
     if (data.size() > 7 + _fhdr._f_ctrl._f_opts_len) {
@@ -66,7 +66,7 @@ void mac_payload::unmarshal_binary(const std::vector<byte>& data, bool uplink) {
         bytes = {data.begin() + 7 + _fhdr._f_ctrl._f_opts_len + 1, data.end()};
         data_payload payload;
         payload._data = std::move(bytes);
-        _frm_payload.push_back(std::make_unique<data_payload>(std::move(payload)));
+        _frm_payload.push_back(std::make_shared<data_payload>(std::move(payload)));
     }
 }
 

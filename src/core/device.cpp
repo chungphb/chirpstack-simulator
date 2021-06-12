@@ -88,15 +88,15 @@ void device::send_data() {
     phy_payload._mhdr._major = lora::major::lorawan_r1;
 
     // Set MAC payload
-    lora::mac_payload payload;
-    payload._fhdr._dev_addr = _dev_addr;
-    payload._fhdr._f_cnt = _f_cnt_up;
-    payload._fhdr._f_ctrl._adr = false;
-    payload._f_port = std::make_unique<uint8_t>(_f_port);
+    lora::mac_payload mac_payload;
+    mac_payload._fhdr._dev_addr = _dev_addr;
+    mac_payload._fhdr._f_cnt = _f_cnt_up;
+    mac_payload._fhdr._f_ctrl._adr = false;
+    mac_payload._f_port = std::make_unique<uint8_t>(_f_port);
     lora::data_payload data;
     data._data = _payload;
-    payload._frm_payload.push_back(std::make_unique<lora::data_payload>(std::move(data)));
-    phy_payload._mac_payload = std::make_shared<lora::mac_payload>(std::move(payload));
+    mac_payload._frm_payload.push_back(std::make_shared<lora::data_payload>(std::move(data)));
+    phy_payload._mac_payload = std::make_shared<lora::mac_payload>(std::move(mac_payload));
 
     // Encrypt
     phy_payload.encrypt_frm_payload(_app_s_key);
@@ -119,9 +119,9 @@ void device::send_data() {
 
 void device::send_uplink(lora::phy_payload phy_payload) {
     // Prepare uplink frame
-    auto payload = phy_payload.marshal_binary();
+    auto data = phy_payload.marshal_binary();
     gw::UplinkFrame frame;
-    frame.set_phy_payload(payload.data(), payload.size());
+    frame.set_phy_payload(data.data(), data.size());
     gw::UplinkTXInfo* tx_info = frame.mutable_tx_info();
     *tx_info = _uplink_tx_info;
 
@@ -143,7 +143,8 @@ void device::downlink_loop() {
             try {
                 phy_payload.unmarshal_binary({payload.begin(), payload.end()});
             } catch (...) {
-                spdlog::error("DEV {}: Invalid payload", _dev_eui.string());
+                spdlog::error("DEV {}: Handle invalid payload", _dev_eui.string());
+                break;
             }
             switch (phy_payload._mhdr._m_type) {
                 case lora::m_type::join_accept: {
@@ -165,8 +166,6 @@ void device::downlink_loop() {
 }
 
 void device::handle_join_accept(lora::phy_payload phy_payload) {
-    spdlog::debug("DEV {}: Handle Join accept", _dev_eui.string());
-
     // Decrypt Join Accept payload
     phy_payload.decrypt_join_accept_payload(_app_key);
 
@@ -182,28 +181,74 @@ void device::handle_join_accept(lora::phy_payload phy_payload) {
     }
 
     // Validate payload type
-    auto payload = std::dynamic_pointer_cast<lora::join_accept_payload>(phy_payload._mac_payload);
-    if (!payload) {
+    auto join_accept_payload = std::dynamic_pointer_cast<lora::join_accept_payload>(phy_payload._mac_payload);
+    if (!join_accept_payload) {
         throw std::runtime_error("Wrong type of payload");
     }
 
     // Update device settings
     key_info key_info{};
-    key_info._opt_neg = payload->_dl_settings._opt_neg;
+    key_info._opt_neg = join_accept_payload->_dl_settings._opt_neg;
     key_info._nwk_key = _app_key;
-    key_info._net_id = payload->_home_net_id;
+    key_info._net_id = join_accept_payload->_home_net_id;
     key_info._join_eui = _join_eui;
-    key_info._join_nonce = payload->_join_nonce;
+    key_info._join_nonce = join_accept_payload->_join_nonce;
     key_info._dev_nonce = _dev_nonce;
     _app_s_key = get_app_s_key(key_info);
     _nwk_s_key = get_nwk_s_key(key_info);
-    _dev_addr = payload->_dev_addr;
+    _dev_addr = join_accept_payload->_dev_addr;
 
     // Update device state
     _dev_state = device_state::activated;
+
+    spdlog::debug("DEV {}: Handle Join accept", _dev_eui.string());
 }
 
 void device::handle_data(lora::phy_payload phy_payload) {
+    // Validate MIC
+    lora::phy_payload::downlink_data_info data_info{};
+    data_info._m_ver = lora::mac_version::lorawan_1_0;
+    data_info._conf_f_cnt = 0;
+    data_info._s_nwk_s_int_key = _nwk_s_key;
+    auto res = phy_payload.validate_downlink_data_mic(data_info);
+    if (!res) {
+        throw std::runtime_error("Invalid MIC");
+    }
+
+    // Validate payload type
+    auto mac_payload = std::dynamic_pointer_cast<lora::mac_payload>(phy_payload._mac_payload);
+    if (!mac_payload) {
+        throw std::runtime_error("Wrong type of payload");
+    }
+
+    // Reset frame count
+    _f_cnt_down += static_cast<uint16_t>(mac_payload->_fhdr._f_cnt) - static_cast<uint16_t>(_f_cnt_down % (1 << 16));
+
+    // Decrypt frame payload
+    std::vector<byte> data;
+    auto f_port = mac_payload->_f_port ? *mac_payload->_f_port : 0;
+    if (f_port != 0) {
+        phy_payload.decrypt_frm_payload(_app_s_key);
+        if (!mac_payload->_frm_payload.empty()) {
+            auto data_payload = std::dynamic_pointer_cast<lora::data_payload>(mac_payload->_frm_payload[0]);
+            if (!data_payload) {
+                throw std::runtime_error("Wrong type of payload");
+            }
+            data = data_payload->_data;
+        }
+    }
+
+    // Handle downlink data
+    if (_downlink_data_handler) {
+        downlink_data_info downlink_data_info;
+        downlink_data_info._confirmed = phy_payload._mhdr._m_type == lora::m_type::confirmed_data_down;
+        downlink_data_info._ack = mac_payload->_fhdr._f_ctrl._ack;
+        downlink_data_info._f_cnt_down = _f_cnt_down;
+        downlink_data_info._f_port = f_port;
+        downlink_data_info._data = std::move(data);
+        _downlink_data_handler(std::move(downlink_data_info));
+    }
+
     spdlog::debug("DEV {}: Handle packet #{}", _dev_eui.string(), _f_cnt_down);
 }
 

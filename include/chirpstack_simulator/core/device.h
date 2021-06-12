@@ -58,6 +58,14 @@ private:
     std::future<void> _uplink_loop;
     std::future<void> _downlink_loop;
     bool _stopped = false;
+    struct downlink_data_info {
+        bool _confirmed;
+        bool _ack;
+        uint32_t _f_cnt_down;
+        uint8_t _f_port;
+        std::vector<byte> _data;
+    };
+    std::function<void(downlink_data_info)> _downlink_data_handler;
 };
 
 struct key_info {
