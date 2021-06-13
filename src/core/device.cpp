@@ -112,7 +112,7 @@ void device::send_data() {
     phy_payload.set_uplink_data_mic(info);
 
     // Send payload
-    spdlog::debug("DEV {}: Send packet #{}", _dev_eui.string(), _f_cnt_up);
+    spdlog::debug("DEV {}: Send uplink packet #{}", _dev_eui.string(), _f_cnt_up);
     ++_f_cnt_up;
     send_uplink(std::move(phy_payload));
 }
@@ -122,7 +122,7 @@ void device::send_uplink(lora::phy_payload phy_payload) {
     auto data = phy_payload.marshal_binary();
     gw::UplinkFrame frame;
     frame.set_phy_payload(data.data(), data.size());
-    gw::UplinkTXInfo* tx_info = frame.mutable_tx_info();
+    auto* tx_info = frame.mutable_tx_info();
     *tx_info = _uplink_tx_info;
 
     // Send uplink frame
@@ -249,7 +249,7 @@ void device::handle_data(lora::phy_payload phy_payload) {
         _downlink_data_handler(std::move(downlink_data_info));
     }
 
-    spdlog::debug("DEV {}: Handle packet #{}", _dev_eui.string(), _f_cnt_down);
+    spdlog::debug("DEV {}: Handle {} #{}", _dev_eui.string(), _f_port == 0 ? "MAC command" : "downlink packet", _f_cnt_down);
 }
 
 lora::dev_nonce device::get_dev_nonce() {

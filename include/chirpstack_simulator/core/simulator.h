@@ -19,6 +19,7 @@ public:
     void init();
     void run();
     void stop();
+    void test_downlink();
 
 private:
     void setup_client();

@@ -15,7 +15,7 @@ activation_time = 60
 count = 1000
 uplink_interval = 60
 f_port = 10
-payload = "test_packet_1234"
+payload = "uplink_packet_1234"
 frequency = 868100000
 bandwidth = 125
 spreading_factor = 12
@@ -23,3 +23,8 @@ spreading_factor = 12
 [simulator.gateway]
 min_count = 3
 max_count = 5
+
+[simulator.client]
+enable_downlink_test = false
+downlink_interval = 20
+payload = "downlink_packet_1234"

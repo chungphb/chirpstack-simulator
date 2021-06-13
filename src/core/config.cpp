@@ -96,7 +96,7 @@ void config::init(const std::string& config_file) {
     }
     val = config.find("simulator.device.payload");
     if (val && val->is<std::string>()) {
-        _payload = val->as<std::string>();
+        _uplink_payload = val->as<std::string>();
     }
     val = config.find("simulator.device.frequency");
     if (val && val->is<int>()) {
@@ -121,11 +121,28 @@ void config::init(const std::string& config_file) {
         _gw_max_count = val->as<int>();
     }
 
+    // Initialize client configs
+    val = config.find("simulator.client.enable_downlink_test");
+    if (val && val->is<bool>()) {
+        _enable_downlink_test = val->as<bool>();
+    }
+    if (_enable_downlink_test) {
+        val = config.find("simulator.client.downlink_interval");
+        if (val && val->is<int>()) {
+            _downlink_interval = val->as<int>();
+        }
+        val = config.find("simulator.client.payload");
+        if (val && val->is<std::string>()) {
+            _downlink_payload = val->as<std::string>();
+        }
+    }
+
     // Log config
-    spdlog::debug("{:<25}: {:>20}", "Network server", to_string(_network_server));
-    spdlog::debug("{:<25}: {:>20}", "Application server", to_string(_application_server));
-    spdlog::debug("{:<25}: {:>20}", "Device count", _dev_count);
-    spdlog::debug("{:<25}: {:>20}", "Gateway count", _gw_max_count);
+    spdlog::debug("{:<20}:{:>20}", "Network server", to_string(_network_server));
+    spdlog::debug("{:<20}:{:>20}", "Application server", to_string(_application_server));
+    spdlog::debug("{:<20}:{:>20}", "Device count", _dev_count);
+    spdlog::debug("{:<20}:{:>20}", "Gateway count", _gw_max_count);
+    spdlog::debug("{:<20}:{:>20}", "Downlink test", _enable_downlink_test ? "Enabled" : "Disabled");
 }
 
 }

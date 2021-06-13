@@ -67,7 +67,7 @@ void simulator::init() {
         // Set uplink payload
         dev->_f_port = static_cast<uint8_t>(_config._f_port);
         dev->_confirmed = false;
-        std::copy(_config._payload.begin(), _config._payload.end(), std::back_inserter(dev->_payload));
+        std::copy(_config._uplink_payload.begin(), _config._uplink_payload.end(), std::back_inserter(dev->_payload));
 
         // Set downlink payload
         dev->_downlink_frames = std::make_shared<channel<gw::DownlinkFrame>>();
@@ -90,7 +90,7 @@ void simulator::init() {
         // Set uplink TX info
         dev->_uplink_tx_info.set_frequency(_config._freq);
         dev->_uplink_tx_info.set_modulation(common::LORA);
-        gw::LoRaModulationInfo* lora_modulation_info = dev->_uplink_tx_info.mutable_lora_modulation_info();
+        auto* lora_modulation_info = dev->_uplink_tx_info.mutable_lora_modulation_info();
         lora_modulation_info->set_bandwidth(_config._bandwidth);
         lora_modulation_info->set_spreading_factor(_config._s_factor);
         lora_modulation_info->set_code_rate("3/4");
@@ -116,8 +116,14 @@ void simulator::run() {
         dev->run();
     }
 
-    // Wait to stop
-    std::this_thread::sleep_for(std::chrono::seconds(_config._duration));
+    // Test downlink or wait to stop
+    if (_config._enable_downlink_test) {
+        test_downlink();
+    } else {
+        std::this_thread::sleep_for(std::chrono::seconds(_config._duration));
+    }
+
+    // Stop
     stop();
 }
 
@@ -135,6 +141,41 @@ void simulator::stop() {
     // Stop gateways
     for (const auto& gw : _gw_list) {
         gw->stop();
+    }
+}
+
+void simulator::test_downlink() {
+    // Enqueue device queue items
+    for (int i = 0; (i + 1) * _config._downlink_interval <= _config._duration; ++i) {
+        for (const auto& dev : _dev_list) {
+            // Prepare request
+            enqueue_device_queue_item_request request;
+            auto* device_queue_item = request.mutable_device_queue_item();
+            device_queue_item->set_dev_eui(dev->_dev_eui.string());
+            device_queue_item->set_confirmed(false);
+            device_queue_item->set_f_port(_config._f_port);
+            device_queue_item->set_data(_config._downlink_payload);
+
+            // Enqueue downlink packet
+            auto response = _client->enqueue_device_queue_item(request);
+            if (response.is_valid()) {
+                spdlog::trace("Enqueue packet #{} on device {}'s queue", response.get().f_cnt(), dev->_dev_eui.string());
+            }
+        }
+        std::this_thread::sleep_for(std::chrono::seconds(_config._downlink_interval));
+    }
+
+    // Flush device queues
+    for (const auto& dev : _dev_list) {
+        // Prepare request
+        flush_device_queue_request request;
+        request.set_dev_eui(dev->_dev_eui.string());
+
+        // Flush device queue
+        auto response = _client->flush_device_queue(request);
+        if (response.is_valid()) {
+            spdlog::trace("Flush device {}'s queue", dev->_dev_eui.string());
+        }
     }
 }
 
@@ -157,7 +198,7 @@ void simulator::setup_client() {
 
 void simulator::setup_service_profile() {
     // Prepare request
-    api::GetServiceProfileRequest request;
+    get_service_profile_request request;
     request.set_id(_config._service_profile_id);
 
     // Get service profile
@@ -173,8 +214,8 @@ void simulator::setup_service_profile() {
 void simulator::setup_gateways() {
     for (const auto& gw : _gw_list) {
         // Prepare request
-        api::CreateGatewayRequest request;
-        api::Gateway* gateway = request.mutable_gateway();
+        create_gateway_request request;
+        auto* gateway = request.mutable_gateway();
         gateway->set_id(gw->_gateway_id.string());
         gateway->set_name(gw->_gateway_id.string());
         gateway->set_description(gw->_gateway_id.string());
@@ -200,14 +241,21 @@ void simulator::setup_gateways() {
 
 void simulator::setup_device_profile() {
     // Prepare request
-    api::CreateDeviceProfileRequest request;
-    api::DeviceProfile* device_profile = request.mutable_device_profile();
+    create_device_profile_request request;
+    auto* device_profile = request.mutable_device_profile();
     device_profile->set_name(_client_info._device_profile_name);
     device_profile->set_organization_id(_client_info._service_profile.organization_id());
     device_profile->set_network_server_id(_client_info._service_profile.network_server_id());
     device_profile->set_mac_version("1.0.3");
     device_profile->set_reg_params_revision("B");
     device_profile->set_supports_join(true);
+    if (_config._enable_downlink_test) {
+        device_profile->set_supports_class_b(true);
+        device_profile->set_class_b_timeout(4);
+        device_profile->set_ping_slot_period(1);
+        device_profile->set_ping_slot_dr(0);
+        device_profile->set_ping_slot_freq(_config._freq);
+    }
 
     // Create device profile
     auto response = _client->create_device_profile(request);
@@ -221,8 +269,8 @@ void simulator::setup_device_profile() {
 
 void simulator::setup_application() {
     // Prepare request
-    api::CreateApplicationRequest request;
-    api::Application* application = request.mutable_application();
+    create_application_request request;
+    auto* application = request.mutable_application();
     application->set_name(_client_info._application_name);
     application->set_description(_client_info._application_name);
     application->set_organization_id(_client_info._service_profile.organization_id());
@@ -241,8 +289,8 @@ void simulator::setup_application() {
 void simulator::setup_devices() {
     for (const auto& dev : _dev_list) {
         // Prepare request
-        api::CreateDeviceRequest request;
-        api::Device* device = request.mutable_device();
+        create_device_request request;
+        auto* device = request.mutable_device();
         device->set_dev_eui(dev->_dev_eui.string());
         device->set_name(dev->_dev_eui.string());
         device->set_description(dev->_dev_eui.string());
@@ -262,8 +310,8 @@ void simulator::setup_devices() {
 void simulator::setup_device_keys() {
     for (const auto& dev : _dev_list) {
         // Prepare request
-        api::CreateDeviceKeysRequest request;
-        api::DeviceKeys* device_keys = request.mutable_device_keys();
+        create_device_keys_request request;
+        auto* device_keys = request.mutable_device_keys();
         device_keys->set_dev_eui(dev->_dev_eui.string());
         device_keys->set_nwk_key(dev->_app_key.string());
 
@@ -287,7 +335,7 @@ void simulator::tear_down_client() {
 void simulator::tear_down_devices() {
     for (const auto& dev : _dev_list) {
         // Prepare request
-        api::DeleteDeviceRequest request;
+        delete_device_request request;
         request.set_dev_eui(dev->_dev_eui.string());
 
         // Delete device
@@ -302,7 +350,7 @@ void simulator::tear_down_devices() {
 
 void simulator::tear_down_application() {
     // Prepare request
-    api::DeleteApplicationRequest request;
+    delete_application_request request;
     request.set_id(_client_info._application_id);
 
     // Delete application
@@ -316,7 +364,7 @@ void simulator::tear_down_application() {
 
 void simulator::tear_down_device_profile() {
     // Prepare request
-    api::DeleteDeviceProfileRequest request;
+    delete_device_profile_request request;
     request.set_id(_client_info._device_profile_id);
 
     // Delete device profile
@@ -331,7 +379,7 @@ void simulator::tear_down_device_profile() {
 void simulator::tear_down_gateways() {
     for (const auto& gw : _gw_list) {
         // Prepare request
-        api::DeleteGatewayRequest request;
+        delete_gateway_request request;
         request.set_id(gw->_gateway_id.string());
 
         // Delete gateway

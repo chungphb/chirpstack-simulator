@@ -41,7 +41,7 @@ void gateway::add_device(lora::eui64 dev_eui, std::shared_ptr<channel<gw::Downli
 
 void gateway::send_uplink_frame(gw::UplinkFrame frame) {
     // Generate PUSH_DATA packet
-    gw::UplinkRXInfo* rx_info = frame.mutable_rx_info();
+    auto* rx_info = frame.mutable_rx_info();
     *rx_info = _uplink_rx_info;
     auto packet = generate_push_data_packet(frame);
 

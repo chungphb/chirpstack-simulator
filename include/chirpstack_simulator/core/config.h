@@ -31,12 +31,15 @@ private:
     int _dev_count = 1000;
     int _uplink_interval = 60;
     int _f_port = 10;
-    std::string _payload = "TEST_PACKET_1234";
+    std::string _uplink_payload = "downlink_packet_1234";
     int _freq = 868100000;
     int _bandwidth = 500;
     int _s_factor = 12;
     int _gw_min_count = 3;
     int _gw_max_count = 5;
+    bool _enable_downlink_test = false;
+    int _downlink_interval = 20;
+    std::string _downlink_payload = "downlink_packet_1234";
 };
 
 }
