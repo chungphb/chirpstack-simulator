@@ -16,6 +16,8 @@ using namespace chirpstack_cpp_client;
 
 struct simulator {
 public:
+    void generate_config_file(const std::string& config_file);
+    void set_config_file(const std::string& config_file);
     void init();
     void run();
     void stop();
@@ -36,6 +38,7 @@ private:
     void tear_down_gateways();
 
 private:
+    std::string _config_file;
     config _config;
     std::vector<std::shared_ptr<device>> _dev_list;
     std::vector<std::shared_ptr<gateway>> _gw_list;

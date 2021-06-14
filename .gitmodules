@@ -19,3 +19,6 @@
 [submodule "modules/json11"]
 	path = modules/json11
 	url = https://github.com/dropbox/json11
+[submodule "modules/argagg"]
+	path = modules/argagg
+	url = https://github.com/vietjtnguyen/argagg

@@ -8,12 +8,60 @@
 #include <algorithm>
 #include <iostream>
 #include <thread>
+#include <fstream>
 
 namespace chirpstack_simulator {
 
+void simulator::generate_config_file(const std::string& config_file) {
+    std::ofstream ofs;
+    ofs.open(config_file.c_str());
+
+    ofs << "[general]" << '\n';
+    ofs << "log_level = " << 4 << '\n';
+    ofs << '\n';
+
+    ofs << "[server]" << '\n';
+    ofs << "network_server = " << R"(")" << to_string(_config._network_server) << R"(")" << '\n';
+    ofs << "application_server = " << R"(")" << to_string(_config._application_server) << R"(")" << '\n';
+    ofs << '\n';
+
+    ofs << "[simulator]" << '\n';
+    ofs << "jwt_token = " << R"(")" << R"(")" << '\n';
+    ofs << "service_profile_id = " << R"(")" << R"(")" << '\n';
+    ofs << "duration = " << _config._duration << '\n';
+    ofs << "activation_time = " << _config._activation_time << '\n';
+    ofs << '\n';
+
+    ofs << "[simulator.device]" << '\n';
+    ofs << "count = " << _config._dev_count << '\n';
+    ofs << "uplink_interval = " << _config._uplink_interval << '\n';
+    ofs << "f_port = " << _config._f_port << '\n';
+    ofs << "payload = " << R"(")" << _config._uplink_payload << R"(")" << '\n';
+    ofs << "frequency = " << _config._freq << '\n';
+    ofs << "bandwidth = " << _config._bandwidth << '\n';
+    ofs << "spreading_factor = " << _config._s_factor << '\n';
+    ofs << '\n';
+
+    ofs << "[simulator.gateway]" << '\n';
+    ofs << "min_count = " << _config._gw_min_count << '\n';
+    ofs << "max_count = " << _config._gw_max_count << '\n';
+    ofs << '\n';
+
+    ofs << "[simulator.client]" << '\n';
+    ofs << "enable_downlink_test = " << std::boolalpha << _config._enable_downlink_test << '\n';
+    ofs << "downlink_interval = " << _config._downlink_interval << '\n';
+    ofs << "payload = " << R"(")" << _config._downlink_payload << R"(")" << '\n';
+
+    ofs.close();
+}
+
+void simulator::set_config_file(const std::string& config_file) {
+    _config_file = config_file;
+}
+
 void simulator::init() {
     // Parse config
-    _config.init("chirpstack_simulator.toml");
+    _config.init(_config_file);
 
     // Initialize gateway list
     for (int i = 0; i < _config._gw_max_count; ++i) {

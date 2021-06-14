@@ -31,9 +31,9 @@ private:
     int _dev_count = 1000;
     int _uplink_interval = 60;
     int _f_port = 10;
-    std::string _uplink_payload = "downlink_packet_1234";
+    std::string _uplink_payload = "uplink_packet_1234";
     int _freq = 868100000;
-    int _bandwidth = 500;
+    int _bandwidth = 125;
     int _s_factor = 12;
     int _gw_min_count = 3;
     int _gw_max_count = 5;

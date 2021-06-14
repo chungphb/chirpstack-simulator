@@ -9,6 +9,8 @@ include_directories(modules/spdlog/include)
 include_directories(modules/chirpstack-client/include)
 include_directories(modules/cryptopp)
 include_directories(modules/json11)
+include_directories(modules/argagg/include)
+
 include_directories(include)
 
 set(chirpstack_simulator_hdrs
@@ -35,7 +37,8 @@ set(chirpstack_simulator_srcs
         src/core/lora/fhdr.cpp
         src/core/lora/net_id.cpp
         src/util/helper.cpp)
-add_library(chirpstack_simulator
+add_executable(chirpstack_simulator
+        apps/chirpstack_simulator.cpp
         ${chirpstack_simulator_hdrs}
         ${chirpstack_simulator_srcs})
 target_link_libraries(chirpstack_simulator
@@ -43,10 +46,5 @@ target_link_libraries(chirpstack_simulator
         PUBLIC chirpstack_client
         PUBLIC cryptopp-shared
         PUBLIC json11)
-
-add_executable(main
-        apps/main.cpp)
-target_link_libraries(main
-        PRIVATE chirpstack_simulator)
 
 add_subdirectory(modules)
