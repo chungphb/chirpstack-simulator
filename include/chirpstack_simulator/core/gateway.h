@@ -47,6 +47,7 @@ private:
     std::future<void> _handle_downlink_frame;
     bool _connected = false;
     bool _stopped = false;
+    std::mutex _push_mutex;
 };
 
 struct rxpk {

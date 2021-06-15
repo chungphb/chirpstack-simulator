@@ -43,6 +43,7 @@ private:
     std::vector<std::shared_ptr<device>> _dev_list;
     std::vector<std::shared_ptr<gateway>> _gw_list;
     std::unique_ptr<chirpstack_client> _client;
+    bool _stopped = false;
     struct client_info {
         std::string _device_profile_name;
         std::string _application_name;

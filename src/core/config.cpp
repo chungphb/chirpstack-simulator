@@ -15,7 +15,7 @@ void config::init(const std::string& config_file) {
     std::ifstream ifs(config_file);
     toml::ParseResult res = toml::parse(ifs);
     if (!res.valid()) {
-        throw std::runtime_error("Invalid config file");
+        throw std::runtime_error("Simulator: Invalid config file");
     }
     const toml::Value& config = res.value;
 
@@ -59,17 +59,15 @@ void config::init(const std::string& config_file) {
     val = config.find("simulator.jwt_token");
     if (val && val->is<std::string>()) {
         _jwt_token = val->as<std::string>();
-        // TODO: Validation
         if (_jwt_token.empty()) {
-            throw std::invalid_argument("Invalid JWT token");
+            throw std::invalid_argument("Simulator: Invalid JWT token");
         }
     }
     val = config.find("simulator.service_profile_id");
     if (val && val->is<std::string>()) {
         _service_profile_id = val->as<std::string>();
-        // TODO: Validation
         if (_service_profile_id.empty()) {
-            throw std::invalid_argument("Invalid service-profile ID");
+            throw std::invalid_argument("Simulator: Invalid service profile ID");
         }
     }
     val = config.find("simulator.duration");

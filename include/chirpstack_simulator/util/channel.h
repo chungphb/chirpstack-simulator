@@ -28,7 +28,7 @@ public:
     void put(const T& item) {
         std::unique_lock<std::mutex> lock{_mutex};
         if (_closed) {
-            throw std::runtime_error("put to closed channel");
+            throw std::runtime_error("channel: put to closed channel");
         }
         _queue.push_back(item);
         _cond_var.notify_one();

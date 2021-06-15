@@ -178,6 +178,18 @@ void simulator::run() {
 void simulator::stop() {
     spdlog::info("[STOP]");
 
+    // Prepare to stop
+    if (_stopped) {
+        return;
+    }
+    _stopped = true;
+    for (const auto& dev : _dev_list) {
+        dev->_stopped = true;
+    }
+    for (const auto& gw : _gw_list) {
+        gw->_stopped = true;
+    }
+
     // Tear down client
     tear_down_client();
 

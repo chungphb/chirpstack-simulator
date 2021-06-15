@@ -26,10 +26,10 @@ private:
     server_address _application_server{default_as_host, default_as_port};
     std::string _jwt_token;
     std::string _service_profile_id;
-    int _duration = 120;
-    int _activation_time = 60;
-    int _dev_count = 1000;
-    int _uplink_interval = 60;
+    int _duration = 60;
+    int _activation_time = 5;
+    int _dev_count = 100;
+    int _uplink_interval = 10;
     int _f_port = 10;
     std::string _uplink_payload = "uplink_packet_1234";
     int _freq = 868100000;
@@ -38,7 +38,7 @@ private:
     int _gw_min_count = 3;
     int _gw_max_count = 5;
     bool _enable_downlink_test = false;
-    int _downlink_interval = 20;
+    int _downlink_interval = 15;
     std::string _downlink_payload = "downlink_packet_1234";
 };
 

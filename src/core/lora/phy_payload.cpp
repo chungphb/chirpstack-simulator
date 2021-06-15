@@ -5,11 +5,11 @@
 #include <chirpstack_simulator/core/lora/phy_payload.h>
 #include <chirpstack_simulator/core/lora/mac_payload.h>
 #include <chirpstack_simulator/util/helper.h>
-#include <spdlog/spdlog.h>
 #include <cmac.h>
 #include <aes.h>
 #include <modes.h>
 #include <filters.h>
+#include <iostream>
 
 namespace chirpstack_simulator {
 namespace lora {
@@ -148,7 +148,7 @@ mic phy_payload::calculate_uplink_data_mic(uplink_data_info& info) {
         s_encoded.resize(cmac.DigestSize());
         cmac.Final((CryptoPP::byte*)&s_encoded[0]);
     } catch (const CryptoPP::Exception& ex) {
-        spdlog::error("Failed to encrypt: {}",  ex.what());
+        std::cerr << "lora: failed to encrypt: " << ex.what() << '\n';
     }
     if (s_encoded.size() < 4) {
         throw std::runtime_error("lora: the hash returned less than 4 bytes");
@@ -165,7 +165,7 @@ mic phy_payload::calculate_uplink_data_mic(uplink_data_info& info) {
         f_encoded.resize(cmac.DigestSize());
         cmac.Final((CryptoPP::byte*)&f_encoded[0]);
     } catch (const CryptoPP::Exception& ex) {
-        spdlog::error("Failed to encrypt: {}",  ex.what());
+        std::cerr << "lora: failed to encrypt: " << ex.what() << '\n';
     }
     if (f_encoded.size() < 2) {
         throw std::runtime_error("lora: the hash returned less than 2 bytes");
@@ -251,7 +251,7 @@ mic phy_payload::calculate_downlink_data_mic(downlink_data_info& info) {
         encoded.resize(cmac.DigestSize());
         cmac.Final((CryptoPP::byte*)&encoded[0]);
     } catch (const CryptoPP::Exception& ex) {
-        spdlog::error("Failed to encrypt: {}",  ex.what());
+        std::cerr << "lora: failed to encrypt: " << ex.what() << '\n';
     }
     if (encoded.size() < 4) {
         throw std::runtime_error("lora: the hash returned less than 4 bytes");
@@ -299,7 +299,7 @@ mic phy_payload::calculate_uplink_join_mic(uplink_join_info& info) {
         encoded.resize(cmac.DigestSize());
         cmac.Final((CryptoPP::byte*)&encoded[0]);
     } catch (const CryptoPP::Exception& ex) {
-        spdlog::error("Failed to encrypt: {}",  ex.what());
+        std::cerr << "lora: failed to encrypt: " << ex.what() << '\n';
     }
     if (encoded.size() < 4) {
         throw std::runtime_error("lora: the hash returned less than 4 bytes");
@@ -365,7 +365,7 @@ mic phy_payload::calculate_downlink_join_mic(downlink_join_info& info) {
         encoded.resize(cmac.DigestSize());
         cmac.Final((CryptoPP::byte*)&encoded[0]);
     } catch (const CryptoPP::Exception& ex) {
-        spdlog::error("Failed to encrypt: {}",  ex.what());
+        std::cerr << "lora: failed to encrypt: " << ex.what() << '\n';
     }
     if (encoded.size() < 4) {
         throw std::runtime_error("lora: the hash returned less than 4 bytes");

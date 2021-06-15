@@ -74,7 +74,8 @@ std::vector<byte> mac_payload::marshal_payload() {
     std::vector<byte> res;
     std::vector<byte> bytes;
     for (const auto& payload : _frm_payload) {
-        bytes = payload->marshal_binary(); // TODO: Support MAC command
+        // TODO: Support MAC command
+        bytes = payload->marshal_binary();
         res.insert(res.end(), bytes.begin(), bytes.end());
     }
     return res;

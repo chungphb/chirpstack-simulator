@@ -23,7 +23,6 @@ void device::run() {
 }
 
 void device::stop() {
-    _stopped = true;
     _downlink_frames->close();
     _uplink_loop.get();
     _downlink_loop.get();
@@ -157,7 +156,7 @@ void device::downlink_loop() {
                     break;
                 }
                 default: {
-                    throw std::runtime_error("Something went wrong");
+                    throw std::runtime_error("Simulator: Something went wrong");
                 }
             }
         }
@@ -175,15 +174,21 @@ void device::handle_join_accept(lora::phy_payload phy_payload) {
     join_info._join_eui = _join_eui;
     join_info._dev_nonce = _dev_nonce;
     join_info._key = _app_key;
-    auto res = phy_payload.validate_downlink_join_mic(join_info);
-    if (!res) {
-        throw std::runtime_error("Invalid MIC");
+    try {
+        auto res = phy_payload.validate_downlink_join_mic(join_info);
+        if (!res) {
+            spdlog::trace("DEV {}: Invalid MIC", _dev_eui.string());
+            return;
+        }
+    } catch (...) {
+        spdlog::trace("DEV {}: Invalid MIC", _dev_eui.string());
+        return;
     }
 
     // Validate payload type
     auto join_accept_payload = std::dynamic_pointer_cast<lora::join_accept_payload>(phy_payload._mac_payload);
     if (!join_accept_payload) {
-        throw std::runtime_error("Wrong type of payload");
+        throw std::runtime_error("Simulator: Wrong type of payload");
     }
 
     // Update device settings
@@ -210,15 +215,21 @@ void device::handle_data(lora::phy_payload phy_payload) {
     data_info._m_ver = lora::mac_version::lorawan_1_0;
     data_info._conf_f_cnt = 0;
     data_info._s_nwk_s_int_key = _nwk_s_key;
-    auto res = phy_payload.validate_downlink_data_mic(data_info);
-    if (!res) {
-        throw std::runtime_error("Invalid MIC");
+    try {
+        auto res = phy_payload.validate_downlink_data_mic(data_info);
+        if (!res) {
+            spdlog::trace("DEV {}: Invalid MIC", _dev_eui.string());
+            return;
+        }
+    } catch (...) {
+        spdlog::trace("DEV {}: Invalid MIC", _dev_eui.string());
+        return;
     }
 
     // Validate payload type
     auto mac_payload = std::dynamic_pointer_cast<lora::mac_payload>(phy_payload._mac_payload);
     if (!mac_payload) {
-        throw std::runtime_error("Wrong type of payload");
+        throw std::runtime_error("Simulator: Wrong type of payload");
     }
 
     // Reset frame count
@@ -232,7 +243,7 @@ void device::handle_data(lora::phy_payload phy_payload) {
         if (!mac_payload->_frm_payload.empty()) {
             auto data_payload = std::dynamic_pointer_cast<lora::data_payload>(mac_payload->_frm_payload[0]);
             if (!data_payload) {
-                throw std::runtime_error("Wrong type of payload");
+                throw std::runtime_error("Simulator: Wrong type of payload");
             }
             data = data_payload->_data;
         }

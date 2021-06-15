@@ -172,12 +172,12 @@ void cf_list::unmarshal_binary(const std::vector<byte>& data) {
     // Unmarshal payload
     bytes = {data.begin(), data.begin() + 15};
     switch (_type) {
-        case cf_list_type::cf_list_channel: {
-            _payload = std::make_unique<cf_list_channel_payload>();
-            break;
-        }
         case cf_list_type::cf_list_channel_mask: {
             _payload = std::make_unique<cf_list_channel_mask_payload>();
+            break;
+        }
+        default: {
+            _payload = std::make_unique<cf_list_channel_payload>();
             break;
         }
     }

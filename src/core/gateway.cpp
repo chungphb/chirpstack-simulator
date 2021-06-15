@@ -27,7 +27,6 @@ void gateway::run() {
 }
 
 void gateway::stop() {
-    _stopped = true;
     _connected = false;
     _handle_downlink_frame.get();
     _keep_alive.get();
@@ -40,6 +39,11 @@ void gateway::add_device(lora::eui64 dev_eui, std::shared_ptr<channel<gw::Downli
 }
 
 void gateway::send_uplink_frame(gw::UplinkFrame frame) {
+    std::lock_guard<std::mutex> lock{_push_mutex};
+    if (_stopped) {
+        return;
+    }
+
     // Generate PUSH_DATA packet
     auto* rx_info = frame.mutable_rx_info();
     *rx_info = _uplink_rx_info;
@@ -252,7 +256,8 @@ bool gateway::is_pull_ack(const byte* resp, size_t resp_len) {
     if (resp_len != 4) {
         return false;
     }
-    if (resp[0] != 0x02 || resp[3] != 0x04) { // TODO: Compare PULL_DATA and PULL_ACK token
+    // TODO: Compare PULL_DATA and PULL_ACK token
+    if (resp[0] != 0x02 || resp[3] != 0x04) {
         return false;
     }
     return true;
