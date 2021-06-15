@@ -176,12 +176,12 @@ void simulator::run() {
 }
 
 void simulator::stop() {
+    if (!is_running()) {
+        return;
+    }
     spdlog::info("[STOP]");
 
     // Prepare to stop
-    if (_stopped) {
-        return;
-    }
     _stopped = true;
     for (const auto& dev : _dev_list) {
         dev->_stopped = true;
@@ -237,6 +237,10 @@ void simulator::test_downlink() {
             spdlog::trace("Flush device {}'s queue", dev->_dev_eui.string());
         }
     }
+}
+
+bool simulator::is_running() {
+    return _client && !_dev_list.empty() && !_gw_list.empty() && !_stopped;
 }
 
 void simulator::setup_client() {

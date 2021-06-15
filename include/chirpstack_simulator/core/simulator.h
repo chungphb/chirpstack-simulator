@@ -24,6 +24,7 @@ public:
     void test_downlink();
 
 private:
+    bool is_running();
     void setup_client();
     void setup_service_profile();
     void setup_gateways();
