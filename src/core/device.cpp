@@ -23,9 +23,15 @@ void device::run() {
 }
 
 void device::stop() {
-    _downlink_frames->close();
-    _uplink_loop.get();
-    _downlink_loop.get();
+    if (_downlink_frames) {
+        _downlink_frames->close();
+    }
+    if (_uplink_loop.valid()) {
+        _uplink_loop.get();
+    }
+    if (_downlink_loop.valid()) {
+        _downlink_loop.get();
+    }
 }
 
 void device::add_gateway(std::shared_ptr<gateway> gateway) {

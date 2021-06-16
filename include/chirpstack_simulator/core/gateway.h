@@ -37,8 +37,8 @@ private:
     bool is_pull_resp(const byte* resp, size_t resp_len);
 
 private:
-    int _push_socket_fd;
-    int _pull_socket_fd;
+    int _push_socket_fd = -1;
+    int _pull_socket_fd = -1;
     sockaddr_in _server;
     lora::eui64 _gateway_id;
     std::map<lora::eui64, std::shared_ptr<channel<gw::DownlinkFrame>>> _devices;

@@ -4,12 +4,34 @@
 
 #include <chirpstack_simulator/core/simulator.h>
 #include <argagg/argagg.hpp>
+#include <csignal>
+#include <csetjmp>
+#include <atomic>
 
 constexpr char version[] = "1.0.";
 constexpr char default_config_file[] = "chirpstack_simulator.toml";
 
+std::atomic<bool> quit{false};
+jmp_buf buf;
+
+void signal_handler(int signal) {
+    if (quit.load()) {
+        exit(EXIT_SUCCESS);
+    } else {
+        quit.store(true);
+        longjmp(buf, 1);
+    }
+}
+
 int main(int argc, char** argv) {
     chirpstack_simulator::simulator sim;
+
+    // Handle SIGINT signal
+    signal(SIGINT, signal_handler);
+    if (setjmp(buf) == 1) {
+        sim.stop();
+        return EXIT_SUCCESS;
+    }
 
     // Handle command-line options
     argagg::parser parser{{
@@ -35,30 +57,23 @@ int main(int argc, char** argv) {
         return EXIT_SUCCESS;
     }
 
+    // Start simulator
     try {
-        // Generate a new configuration file
         if (options["generate-config-file"]) {
             sim.generate_config_file(options["generate-config-file"].as<std::string>());
             return EXIT_SUCCESS;
         }
-
-        // Set configuration file
         auto config_file = options["config"].as<std::string>(default_config_file);
         sim.set_config_file(config_file);
-
-        // Initialize simulator
         sim.init();
-
-        // Run simulator
         sim.run();
     } catch (const std::exception& ex) {
-        // Stop simulator
-        sim.stop();
-
-        // Exit
         std::cerr << ex.what() << '\n';
+        sim.stop();
+        return EXIT_FAILURE;
+    } catch (...) {
+        sim.stop();
         return EXIT_FAILURE;
     }
-
     return EXIT_SUCCESS;
 }

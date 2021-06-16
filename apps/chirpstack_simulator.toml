@@ -8,11 +8,11 @@ application_server = "localhost:8080"
 [simulator]
 jwt_token = ""
 service_profile_id = ""
-duration = 120
-activation_time = 60
+duration = 60
+activation_time = 5
 
 [simulator.device]
-count = 1000
+count = 100
 uplink_interval = 60
 f_port = 10
 payload = "uplink_packet_1234"
@@ -26,5 +26,5 @@ max_count = 5
 
 [simulator.client]
 enable_downlink_test = false
-downlink_interval = 20
+downlink_interval = 15
 payload = "downlink_packet_1234"

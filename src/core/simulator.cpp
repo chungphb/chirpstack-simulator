@@ -179,6 +179,7 @@ void simulator::stop() {
     if (!is_running()) {
         return;
     }
+
     spdlog::info("[STOP]");
 
     // Prepare to stop

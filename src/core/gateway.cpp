@@ -28,10 +28,18 @@ void gateway::run() {
 
 void gateway::stop() {
     _connected = false;
-    _handle_downlink_frame.get();
-    _keep_alive.get();
-    close(_push_socket_fd);
-    close(_pull_socket_fd);
+    if (_handle_downlink_frame.valid()) {
+        _handle_downlink_frame.get();
+    }
+    if (_keep_alive.valid()) {
+        _keep_alive.get();
+    }
+    if (_push_socket_fd >= 0) {
+        close(_push_socket_fd);
+    }
+    if (_pull_socket_fd >= 0) {
+        close(_pull_socket_fd);
+    }
 }
 
 void gateway::add_device(lora::eui64 dev_eui, std::shared_ptr<channel<gw::DownlinkFrame>> channel) {
