@@ -38,11 +38,11 @@ private:
     lora::eui64 _dev_eui;
     lora::eui64 _join_eui;
     lora::aes128key _app_key;
-    size_t _uplink_interval = 60;
+    size_t _uplink_interval = 10;
     uint32_t _uplink_cnt = 0;
     bool _confirmed = false;
     std::vector<byte> _payload;
-    uint8_t _f_port;
+    uint8_t _f_port = 10;
     lora::dev_addr _dev_addr;
     lora::dev_nonce _dev_nonce;
     uint32_t _f_cnt_up = 0;
@@ -54,7 +54,7 @@ private:
     std::vector<std::shared_ptr<gateway>> _gateways;
     bool _rand_dev_nonce = false;
     gw::UplinkTXInfo _uplink_tx_info;
-    size_t _otaa_delay = 60;
+    size_t _otaa_delay = 5;
     std::future<void> _uplink_loop;
     std::future<void> _downlink_loop;
     bool _stopped = false;

@@ -16,7 +16,7 @@ byte get_random_byte(byte min, byte max) {
 }
 
 std::string get_random_eui64() {
-    std::stringstream ss;
+    std::basic_stringstream<byte> ss;
     ss << std::hex;
     for (int i = 0; i < 16; ++i) {
         ss << get_random_number<int>(0, 15);
@@ -25,7 +25,7 @@ std::string get_random_eui64() {
 }
 
 std::string get_random_aes128key() {
-    std::stringstream ss;
+    std::basic_stringstream<byte> ss;
     ss << std::hex;
     for (int i = 0; i < 32; ++i) {
         ss << get_random_number<int>(0, 15);
@@ -34,7 +34,7 @@ std::string get_random_aes128key() {
 }
 
 std::string get_random_uuid_v4() {
-    std::stringstream ss;
+    std::basic_stringstream<byte> ss;
     ss << std::hex;
     for (int i = 0; i < 8; ++i) {
         ss << get_random_number<int>(0, 15);
@@ -119,7 +119,7 @@ std::string to_string(const server_address& addr) {
 }
 
 std::string to_hex_string(const byte* str, size_t len) {
-    std::stringstream ss;
+    std::basic_stringstream<byte> ss;
     for (size_t i = 0; i < len; ++i) {
         ss << std::hex << std::setw(2) << std::setfill('0') << (int)static_cast<unsigned char>(str[i]);
     }

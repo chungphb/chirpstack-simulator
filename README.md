@@ -1,11 +1,11 @@
 # ChirpStack Simulator
 
-ChirpStack Simulator is a C++ variant of the open-source simulator [ChirpStack Simulator](https://github.com/brocaar/chirpstack-simulator) developed by [brocaar](https://github.com/brocaar) and co. for the ChirpStack open-source LoRaWAN® Network-Server stack. By simulating real LoRa gateways and LoRa devices, ChirpStack Simulator allows ChirpStack users to check their setups, to debug failures and to have a thorough understanding of how ChirpStack really works in action.
+**ChirpStack Simulator** is a C++ variant of the open-source simulator [ChirpStack Simulator](https://github.com/brocaar/chirpstack-simulator) developed by [brocaar](https://github.com/brocaar) and co. for the ChirpStack open-source LoRaWAN® Network-Server stack. By simulating real LoRa gateways and LoRa devices, **ChirpStack Simulator** allows ChirpStack users to check their setups, to debug failures and to have a thorough understanding of how ChirpStack really works in action.
 
 ## Building
 
 ### How to build
-As for many C++ projects, ChirpStack Simulator can be built using the CMake build system. The minimum required version of CMake is 3.15. To build ChirpStack Simulator, use the following commands:
+As for many C++ projects, **ChirpStack Simulator** can be built using the CMake build system. The minimum required version of CMake is 3.15. To build **ChirpStack Simulator**, use the following commands:
 
 ```bash
 $ bash scripts/pre-build.sh
@@ -16,14 +16,14 @@ The binary file will be located at `bin/chirpstack_simulator`.
 
 ### Note
 
-* **About cryptopp**: Running the bash script `scripts/pre-build.sh` before building is required because cryptopp is not fully supporting CMake as of now.
-* **About gRPC**: Installing and configuring gRPC can be fairly complicated. See also: [basic-grpc](https://github.com/chungphb/basic-grpc), [chirpstack-client](https://github.com/chungphb/chirpstack-client).
+* **About cryptopp**: Running the bash script `scripts/pre-build.sh` before building is required because **cryptopp** is not fully supporting CMake as of now.
+* **About gRPC**: Installing and configuring **gRPC** can be fairly complicated. See also: [grpc-cpp](https://github.com/chungphb/grpc-cpp), [chirpstack-client](https://github.com/chungphb/chirpstack-client).
 
 ## Configuration
 
 ### How to generate a new configuration file
 
-Having a valid TOML configuration file is mandatory to run ChirpStack Simulator. This configuration file could be generated using the `--generate-config-file` command-line option:
+Having a valid TOML configuration file is mandatory to run **ChirpStack Simulator**. This configuration file could be generated using the `--generate-config-file` command-line option:
 
 ```bash
 ./bin/chirpstack_simulator --generate-config-file [OUTPUT_FILE]
@@ -37,7 +37,7 @@ For example: `./bin/chirpstack_simulator --generate-config-file ./bin/chirpstack
 
 | Name                                    | Type   | Meaning                                                      | Requirements                     |
 | --------------------------------------- | :----- | ------------------------------------------------------------ | -------------------------------- |
-| `general.log_level`                     | int    | Log level (trace = 6, debug = 5, info = 4, warn = 3, error = 2, critica;l = 1, off = 0). | >= 0, <= 6                       |
+| `general.log_level`                     | int    | Log level (trace = 6, debug = 5, info = 4, warn = 3, error = 2, critical = 1, off = 0). | >= 0, <= 6                       |
 | `server.network_server`                 | string | ChirpStack Gateway Bridge's UDP listener.                    | host:port                        |
 | `server.application_server`             | string | ChirpStack Application Server's external API server.         | host:port                        |
 | `simulator.jwt_token`                   | string | The JWT token to connect to the ChirpStack Application Server API. | Not empty                        |
@@ -45,7 +45,7 @@ For example: `./bin/chirpstack_simulator --generate-config-file ./bin/chirpstack
 | `simulator.duration`                    | int    | The time running the simulation (s).                         | > 0                              |
 | `simulator.activation_time`             | int    | The time taken to activate the devices (s).                  | > 0, < `simulator.duration`      |
 | `simulator.device.count`                | int    | Number of devices.                                           | > 0, <= 1000                     |
-| `simulator.device.uplink_interval`      | int    | The time between two consecutive uplink tranmissions (s).    | > 0, < `simulator.duration`      |
+| `simulator.device.uplink_interval`      | int    | The time between two consecutive uplink transmissions (s).   | > 0, < `simulator.duration`      |
 | `simulator.device.f_port`               | int    | FPort.                                                       | > 0                              |
 | `simulator.device.payload`              | string | Uplink payload.                                              | Not empty                        |
 | `simulator.device.frequency`            | int    | Frequency (Hz).                                              | > 0                              |
@@ -93,14 +93,14 @@ payload = "downlink_packet_1234"
 ```
 
 ### Note
-* **How to set JWT token:** JWT token can be acquired in the `Token` field after creating a new API key using ChirpStack Application Server web-interface.
-* **How to set service-profile ID:** Service-profile ID can be acquired in the URL after creating a new service-profile using ChirpStack Application Server web-interface.
+* **How to set JWT token:** JWT token can be acquired in the `Token` field after creating a new API key using **ChirpStack Application Server** web-interface.
+* **How to set service-profile ID:** Service-profile ID can be acquired in the URL after creating a new service-profile using **ChirpStack Application Server** web-interface.
 
 ## Running
 
 ### How to run
 
-To start ChirpStack Simulator, use the following command:
+To start **ChirpStack Simulator**, use the following command:
 
 ```bash
 ./bin/chirpstack_simulator --config [CONFIG_FILE]
@@ -112,7 +112,7 @@ For example: `./bin/chirpstack_simulator --config ./bin/chirpstack_simulator.tom
 
 ### What happens during the simulation
 
-After parsing and validating the configuration parameters, ChirpStack Simulator uses the configured `simulator.jwt_token` and `simulator.service_profile_id` to create gateways and devices. Then, the simulation starts.
+After parsing and validating the configuration parameters, **ChirpStack Simulator** uses the configured `simulator.jwt_token` and `simulator.service_profile_id` to create gateways and devices. Then, the simulation starts.
 
 The simulation will be gracefully stopped after a `simulator.duration` interval. During this interval, devices will periodically send uplink frames (and handle downlink frames, if any) to the configured `server.network_server` through the gateways assigned to them.
 
@@ -120,7 +120,7 @@ If downlink test is enabled, downlink frames will also be sent periodically to t
 
 ### How to stop
 
-ChirpStack Simulator will be terminated by any of the following conditions:
+**ChirpStack Simulator** will be terminated by any of the following conditions:
 
 * After a `simulator.duration` interval.
 * When an exception is thrown.

@@ -8,7 +8,7 @@
 #include <csetjmp>
 #include <atomic>
 
-constexpr char version[] = "1.0.";
+constexpr char version[] = "0.1.0.";
 constexpr char default_config_file[] = "chirpstack_simulator.toml";
 
 std::atomic<bool> quit{false};
@@ -36,8 +36,8 @@ int main(int argc, char** argv) {
     // Handle command-line options
     argagg::parser parser{{
         {"version", {"-v", "--version"}, "Show version info and exit.", 0},
-        {"help", {"--help"}, "Show this text and exit.", 0},
-        {"generate-config-file", {"--generate-config-file"}, "Generate a new configuration file and exit.", 1},
+        {"help", {"-h", "--help"}, "Show this text and exit.", 0},
+        {"generate-config-file", {"-g", "--generate-config-file"}, "Generate a new configuration file and exit.", 1},
         {"config", {"-c", "--config"}, "Specify configuration file.", 1}
     }};
     argagg::parser_results options;
@@ -53,7 +53,7 @@ int main(int argc, char** argv) {
         return EXIT_SUCCESS;
     }
     if (options["version"]) {
-        std::cerr << "Chirpstack Simulator " << version << '\n';
+        std::cerr << "ChirpStack Simulator " << version << '\n';
         return EXIT_SUCCESS;
     }
 

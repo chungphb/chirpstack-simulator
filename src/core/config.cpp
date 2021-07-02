@@ -15,7 +15,7 @@ void config::init(const std::string& config_file) {
     std::ifstream ifs(config_file);
     toml::ParseResult res = toml::parse(ifs);
     if (!res.valid()) {
-        throw std::runtime_error("Simulator: Invalid config file");
+        throw std::runtime_error("Config: Invalid config file");
     }
     const toml::Value& config = res.value;
 
@@ -53,7 +53,7 @@ void config::init(const std::string& config_file) {
         } else if (log_level == 6) {
             spdlog::set_level(spdlog::level::trace);
         } else {
-            throw std::invalid_argument("Simulator: Invalid log level");
+            throw std::invalid_argument("Config: Invalid log level");
         }
     }
 
@@ -62,28 +62,28 @@ void config::init(const std::string& config_file) {
     if (val && val->is<std::string>()) {
         _jwt_token = val->as<std::string>();
         if (_jwt_token.empty()) {
-            throw std::invalid_argument("Simulator: Invalid JWT token");
+            throw std::invalid_argument("Config: Invalid JWT token");
         }
     }
     val = config.find("simulator.service_profile_id");
     if (val && val->is<std::string>()) {
         _service_profile_id = val->as<std::string>();
         if (_service_profile_id.empty()) {
-            throw std::invalid_argument("Simulator: Invalid service profile ID");
+            throw std::invalid_argument("Config: Invalid service profile ID");
         }
     }
     val = config.find("simulator.duration");
     if (val && val->is<int>()) {
         _duration = val->as<int>();
         if (_duration <= 0) {
-            throw std::invalid_argument("Simulator: Invalid duration");
+            throw std::invalid_argument("Config: Invalid duration");
         }
     }
     val = config.find("simulator.activation_time");
     if (val && val->is<int>()) {
         _activation_time = val->as<int>();
         if (_activation_time <= 0 || _activation_time >= _duration) {
-            throw std::invalid_argument("Simulator: Invalid activation time");
+            throw std::invalid_argument("Config: Invalid activation time");
         }
     }
 
@@ -92,52 +92,52 @@ void config::init(const std::string& config_file) {
     if (val && val->is<int>()) {
         _dev_count = val->as<int>();
         if (_dev_count <= 0 || _dev_count > 1000) {
-            throw std::invalid_argument("Simulator: Invalid device count");
+            throw std::invalid_argument("Config: Invalid device count");
         }
     }
     val = config.find("simulator.device.uplink_interval");
     if (val && val->is<int>()) {
         _uplink_interval = val->as<int>();
         if (_uplink_interval <= 0 || _uplink_interval >= _duration) {
-            throw std::invalid_argument("Simulator: Invalid uplink interval");
+            throw std::invalid_argument("Config: Invalid uplink interval");
         }
     }
     val = config.find("simulator.device.f_port");
     if (val && val->is<int>()) {
         _f_port = val->as<int>();
         if (_f_port < 0) {
-            throw std::invalid_argument("Simulator: Invalid frame port");
+            throw std::invalid_argument("Config: Invalid frame port");
         }
         if (_f_port == 0) {
-            throw std::invalid_argument("Simulator: MAC commands are not supported");
+            throw std::invalid_argument("Config: MAC commands are not supported");
         }
     }
     val = config.find("simulator.device.payload");
     if (val && val->is<std::string>()) {
         _uplink_payload = val->as<std::string>();
         if (_uplink_payload.empty()) {
-            throw std::invalid_argument("Simulator: Invalid uplink payload");
+            throw std::invalid_argument("Config: Invalid uplink payload");
         }
     }
     val = config.find("simulator.device.frequency");
     if (val && val->is<int>()) {
         _freq = val->as<int>();
         if (_freq <= 0) {
-            throw std::invalid_argument("Simulator: Invalid frequency");
+            throw std::invalid_argument("Config: Invalid frequency");
         }
     }
     val = config.find("simulator.device.bandwidth");
     if (val && val->is<int>()) {
         _bandwidth = val->as<int>();
         if (_bandwidth <= 0) {
-            throw std::invalid_argument("Simulator: Invalid bandwidth");
+            throw std::invalid_argument("Config: Invalid bandwidth");
         }
     }
     val = config.find("simulator.device.spreading_factor");
     if (val && val->is<int>()) {
         _s_factor = val->as<int>();
         if (_s_factor <= 0) {
-            throw std::invalid_argument("Simulator: Invalid spread factor");
+            throw std::invalid_argument("Config: Invalid spreading-factor");
         }
     }
 
@@ -146,14 +146,14 @@ void config::init(const std::string& config_file) {
     if (val && val->is<int>()) {
         _gw_min_count = val->as<int>();
         if (_gw_min_count <= 0) {
-            throw std::invalid_argument("Simulator: Invalid gateway min count");
+            throw std::invalid_argument("Config: Invalid gateway min count");
         }
     }
     val = config.find("simulator.gateway.max_count");
     if (val && val->is<int>()) {
         _gw_max_count = val->as<int>();
         if (_gw_max_count <= 0 || _gw_max_count < _gw_min_count) {
-            throw std::invalid_argument("Simulator: Invalid gateway max count");
+            throw std::invalid_argument("Config: Invalid gateway max count");
         }
     }
 
@@ -167,19 +167,19 @@ void config::init(const std::string& config_file) {
         if (val && val->is<int>()) {
             _downlink_interval = val->as<int>();
             if (_downlink_interval <= 0 || _downlink_interval >= _duration) {
-                throw std::invalid_argument("Simulator: Invalid downlink interval");
+                throw std::invalid_argument("Config: Invalid downlink interval");
             }
         }
         val = config.find("simulator.client.payload");
         if (val && val->is<std::string>()) {
             _downlink_payload = val->as<std::string>();
             if (_downlink_payload.empty()) {
-                throw std::invalid_argument("Simulator: Invalid downlink payload");
+                throw std::invalid_argument("Config: Invalid downlink payload");
             }
         }
     }
 
-    // Log config
+    // Log configs
     spdlog::debug("{:<20}:{:>20}", "Network server", to_string(_network_server));
     spdlog::debug("{:<20}:{:>20}", "Application server", to_string(_application_server));
     spdlog::debug("{:<20}:{:>20}", "Device count", _dev_count);

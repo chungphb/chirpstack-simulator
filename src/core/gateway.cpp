@@ -151,7 +151,7 @@ void gateway::send_downlink_tx_ack(gw::DownlinkTXAck ack) {
     spdlog::trace("GTW {}: Send TX_ACK packet", _gateway_id.string());
 }
 
-std::vector<byte> gateway::generate_push_data_packet(const gw::UplinkFrame& payload) {
+std::vector<byte> gateway::generate_push_data_packet(const gw::UplinkFrame& frame) {
     std::vector<byte> packet;
 
     // Set protocol version
@@ -173,29 +173,29 @@ std::vector<byte> gateway::generate_push_data_packet(const gw::UplinkFrame& payl
     rxpk data;
     data.add("time", get_current_timestamp());
     data.add("tmst", get_time_since_epoch());
-    data.add("chan", payload.rx_info().channel());
-    data.add("rfch", payload.rx_info().rf_chain());
-    data.add("freq", payload.tx_info().frequency() / 1000000.);
-    data.add("stat", payload.rx_info().crc_status() == gw::CRC_OK ? 1 : 0);
-    if (payload.tx_info().modulation() == common::LORA) {
+    data.add("chan", frame.rx_info().channel());
+    data.add("rfch", frame.rx_info().rf_chain());
+    data.add("freq", frame.tx_info().frequency() / 1000000.);
+    data.add("stat", frame.rx_info().crc_status() == gw::CRC_OK ? 1 : 0);
+    if (frame.tx_info().modulation() == common::LORA) {
         data.add("modu", "LORA");
-        if (payload.tx_info().has_lora_modulation_info()) {
+        if (frame.tx_info().has_lora_modulation_info()) {
             std::basic_stringstream<byte> datr;
-            datr << "SF" << payload.tx_info().lora_modulation_info().spreading_factor();
-            datr << "BW" << payload.tx_info().lora_modulation_info().bandwidth();
+            datr << "SF" << frame.tx_info().lora_modulation_info().spreading_factor();
+            datr << "BW" << frame.tx_info().lora_modulation_info().bandwidth();
             data.add("datr", datr.str());
-            data.add("codr", payload.tx_info().lora_modulation_info().code_rate());
+            data.add("codr", frame.tx_info().lora_modulation_info().code_rate());
         }
     } else {
         data.add("modu", "FSK");
-        if (payload.tx_info().has_fsk_modulation_info()) {
-            data.add("datr", payload.tx_info().fsk_modulation_info().datarate());
+        if (frame.tx_info().has_fsk_modulation_info()) {
+            data.add("datr", frame.tx_info().fsk_modulation_info().datarate());
         }
     }
-    data.add("rssi", payload.rx_info().rssi());
-    data.add("lsnr", payload.rx_info().lora_snr());
-    data.add("size", payload.phy_payload().size());
-    data.add("data", base64_encode(payload.phy_payload()));
+    data.add("rssi", frame.rx_info().rssi());
+    data.add("lsnr", frame.rx_info().lora_snr());
+    data.add("size", frame.phy_payload().size());
+    data.add("data", base64_encode(frame.phy_payload()));
     auto&& data_str = data.string();
     std::copy(data_str.begin(), data_str.end(), std::back_inserter(packet));
 
@@ -282,19 +282,19 @@ bool gateway::is_pull_resp(const byte* resp, size_t resp_len) {
 }
 
 void rxpk::add(std::string field_name, const std::string& field_value) {
-    std::stringstream ss;
+    std::basic_stringstream<byte> ss;
     ss << R"(")" << field_value << R"(")";
     _fields.emplace_back(std::move(field_name), ss.str());
 }
 
 void rxpk::add(std::string field_name, const char* field_value) {
-    std::stringstream ss;
+    std::basic_stringstream<byte> ss;
     ss << R"(")" << field_value << R"(")";
     _fields.emplace_back(std::move(field_name), ss.str());
 }
 
 std::string rxpk::string() const {
-    std::stringstream ss;
+    std::basic_stringstream<byte> ss;
     ss << R"({"rxpk":[{)";
     for (auto it = _fields.begin(); it != _fields.end();) {
         ss << R"(")" << it->first << R"(":)" << it->second;

@@ -22,14 +22,14 @@ public:
     void run();
     void stop();
     void add_device(lora::eui64 dev_eui, std::shared_ptr<channel<gw::DownlinkFrame>> channel);
-    void send_uplink_frame(gw::UplinkFrame payload);
+    void send_uplink_frame(gw::UplinkFrame frame);
     void keep_alive();
     void handle_downlink_frame();
     void send_downlink_tx_ack(gw::DownlinkTXAck ack);
     friend struct simulator;
 
 private:
-    std::vector<byte> generate_push_data_packet(const gw::UplinkFrame& payload);
+    std::vector<byte> generate_push_data_packet(const gw::UplinkFrame& frame);
     std::vector<byte> generate_pull_data_packet();
     std::vector<byte> generate_tx_ack_packet(const gw::DownlinkTXAck& ack);
     bool is_push_ack(const byte* resp, size_t resp_len, const std::vector<byte>& packet);

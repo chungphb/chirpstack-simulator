@@ -81,7 +81,7 @@ void simulator::init() {
             inet_aton(_config._network_server._host.c_str(), &gw->_server.sin_addr);
         }
 
-        // Set uplink RX _client_info
+        // Set uplink RX info
         gw->_uplink_rx_info.set_rssi(50);
         gw->_uplink_rx_info.set_lora_snr(5.5);
         gw->_uplink_rx_info.set_channel(0);
@@ -120,7 +120,7 @@ void simulator::init() {
         // Set downlink payload
         dev->_downlink_frames = std::make_shared<channel<gw::DownlinkFrame>>();
 
-        // Set gateway
+        // Set gateways
         auto gw_count = get_random_number(_config._gw_min_count, _config._gw_max_count);
         std::vector<size_t> gw_list;
         for (int j = 0; j < gw_count; ++j) {

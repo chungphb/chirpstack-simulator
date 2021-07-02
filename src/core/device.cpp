@@ -266,7 +266,7 @@ void device::handle_data(lora::phy_payload phy_payload) {
         _downlink_data_handler(std::move(downlink_data_info));
     }
 
-    spdlog::debug("DEV {}: Handle {} #{}", _dev_eui.string(), _f_port == 0 ? "MAC command" : "downlink packet", _f_cnt_down);
+    spdlog::debug("DEV {}: Handle {} #{}", _dev_eui.string(), f_port == 0 ? "MAC command" : "downlink packet", _f_cnt_down);
 }
 
 lora::dev_nonce device::get_dev_nonce() {

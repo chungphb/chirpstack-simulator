@@ -13,7 +13,7 @@ activation_time = 5
 
 [simulator.device]
 count = 100
-uplink_interval = 60
+uplink_interval = 10
 f_port = 10
 payload = "uplink_packet_1234"
 frequency = 868100000
